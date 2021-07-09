@@ -1,4 +1,5 @@
 from datetime import date
+from os import link
 from re import findall
 from numpy import append, select
 from selenium import webdriver
@@ -22,7 +23,8 @@ today = datetime.datetime.now().strftime('%d%m%Y')
 PATH = 'C:\Program Files (x86)\chromedriver.exe'
 driver = webdriver.Chrome(PATH)
 
-keywords = ['data', 'wildlife', 'tunnel']
+keywords = ['data cent', 'data storage', 'datacent', 'data']
+
 mainList = []
 
 wait = WebDriverWait(driver, 10)
@@ -66,6 +68,8 @@ for keyword in keywords:
 
         for list in splitList:
             list.append('No Description')
+            list.append(kildareLink)
+            list.append(keyword)
 
         for list in splitList:
             mainList.append(list)
@@ -73,10 +77,12 @@ for keyword in keywords:
     except Exception:
         pass
 
-df = pd.DataFrame(mainList,columns=['File Number','Local Authority Name','Applicant Name','Development Address','Received Date','Development Description'])
-reorderDf = df[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description']]
+df = pd.DataFrame(mainList,columns=['File Number','Local Authority Name','Applicant Name','Development Address','Received Date','Development Description', 'URL', 'Search Term'])
+reorderDf = df[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
 reorderDf.loc[:,'Received Date'] = pd.to_datetime(reorderDf.loc[:, 'Received Date'], format='%d/%m/%Y')
-kildare_df = reorderDf.sort_values(['Received Date', 'Local Authority Name'], ascending=[False, True])
+reorderDf['File Number'] = reorderDf['File Number'].astype(str)
+clean_df = reorderDf.drop_duplicates(subset=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL'],keep= 'last')
+kildare_df = clean_df.sort_values(['Received Date', 'Local Authority Name'], ascending=[False, True])
 kildare_df.to_csv ('kildare.csv', index = False)
 
 driver.quit()
