@@ -10,15 +10,11 @@ import pandas as pd
 startTime = time.time()
 
 data_frame = pd.DataFrame(columns=['File Number','Application Status','Decision Due Date','Decision Date','Decision Code',
-'Received Date','Applicant Name','Development Address','Development Description','Local Authority Name'])
+'Received Date','Applicant Name','Development Address','Development Description','Local Authority Name', 'URL', 'Search Term'])
 
 PATH = 'C:\Program Files (x86)\chromedriver.exe'
 driver = webdriver.Chrome(PATH)
-# keyword = 'Data'
-# keywords = ['data centre', 'data center', 'data storage', 'datacentre', 'datacenter', 'data']
-# keywords = ['data', 'barber']
-# keywords = ['gas']
-keywords = ['data storage', 'data centre', 'data center']
+keywords = ['data storage', 'data cent', 'datacent']
 
 link = 'http://www.eplanning.ie/CarlowCC/SearchExact/Description'
 test_Links = [
@@ -115,6 +111,8 @@ for keyword in keywords:
         tbl = soup.find("table",{"class":"table"})
 
         tempdf = pd.read_html(str(tbl))[0]
+        tempdf['URL'] = link
+        tempdf['Search Term'] = keyword
         data_frame = data_frame.append(tempdf, ignore_index=True)
         
         #PAGINATION
@@ -126,16 +124,17 @@ for keyword in keywords:
             tbl = soup.find("table",{"class":"table"})
 
             tempdf = pd.read_html(str(tbl))[0]
+            tempdf['URL'] = link
+            tempdf['Search Term'] = keyword
             data_frame = data_frame.append(tempdf, ignore_index=True)
 
 data_frame = data_frame.drop(columns =['Application Status','Decision Due Date','Decision Date','Decision Code'])
-data_frame = data_frame[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description']]
+data_frame = data_frame[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term']]
 data_frame.loc[:,'Received Date'] = pd.to_datetime(data_frame.loc[:, 'Received Date'], format='%d/%m/%Y')
-clean_df = data_frame.drop_duplicates()
-# sorted_df = clean_df.sort_values(by=['Received Date'], ascending=False)
+data_frame['File Number'] = data_frame['File Number'].astype(str)
+clean_df = data_frame.drop_duplicates(subset=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL'],keep= 'last')
 bulk_df = clean_df.sort_values(['Received Date', 'Local Authority Name'], ascending=[False, True])
 bulk_df.to_csv ('bulk.csv', index = False)
-# bulk_df.to_csv ('gas.csv', index = False)
     
 # finally:
 driver.quit()
