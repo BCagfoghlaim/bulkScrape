@@ -12,6 +12,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import datetime
+from tkinter import *  
+from tkinter import messagebox, font
 
 beginTime = time.time()
 
@@ -25,7 +27,87 @@ data_frame = pd.DataFrame(columns=['File Number','Application Status','Decision 
 PATH = 'C:\Program Files (x86)\chromedriver.exe'
 driver = webdriver.Chrome(PATH)
 
-keywords = ['data', 'gas']
+# input_string = input("ENTER ALL SEARCH TERMS SEPEARATED BY A COMMA (e.g. data,gas,tunnel) \n THEN PRESS Enter TO RUN SCRIPT: ")
+# keywords = input_string.split(",")
+
+def get_keywords():
+
+    root = Tk()
+    root.title('Enter Search Terms')
+    root.geometry("400x200")
+    root.eval('tk::PlaceWindow . center')
+
+    label1 = Label(root, font="Calibri 14", text="Enter all search terms separated by a comma \n(e.g. data, gas, tunnel) \nThen click 'Run Script': ",justify=CENTER)
+    label1.pack(pady=5)
+
+    words = StringVar()
+    inputBox = Entry(root, font="Calibri 14", textvariable=words,justify=LEFT)
+
+    inputBox.pack(pady=5)
+
+    button1 = Button(root, font="Calibri 14", text="Run Script", bg="blue", fg="white", command=root.destroy)
+    button1.pack(pady=10)
+
+    def on_closing():
+        if messagebox.askokcancel("Quit", "Do you want to quit?"):
+            root.destroy()
+            driver.quit()
+            exit()
+
+    root.protocol("WM_DELETE_WINDOW", on_closing)
+
+    root.mainloop()
+
+    entries = words.get()
+
+    keywords = entries.split(",")
+    print(keywords)
+
+    keywords = [keyword.strip() for keyword in keywords]
+    print(keywords)
+
+    keywords = list(filter(None, keywords))
+    print(keywords)
+
+    keywords = list(dict.fromkeys(keywords))
+    print(keywords)
+    
+    if not keywords:
+        # print('empty')
+        errorBox = Tk()
+        errorBox.title('Error')
+        errorBox.geometry("300x100")
+        errorBox.eval('tk::PlaceWindow . center')
+
+        errorMsg = Label(errorBox, font="Calibri 12", text='Search Term cannot be blank.\nPlease try again', justify=CENTER)
+        errorMsg.pack(pady=5)
+
+        button3 = Button(errorBox, font="Calibri 12", text="Ok", bg="blue", fg="white", command=errorBox.destroy)
+        button3.pack(pady=10)
+
+        errorBox.mainloop()
+        get_keywords()
+
+    return keywords
+
+
+keywords = get_keywords()
+
+# if not keywords:
+#     # print('empty')
+#     errorBox = Tk()
+#     errorBox.title('Error')
+#     errorBox.geometry("300x100")
+#     errorBox.eval('tk::PlaceWindow . center')
+
+#     errorMsg = Label(errorBox, font="Calibri 12", text='Search Term cannot be blank.\nPlease try again', justify=CENTER)
+#     errorMsg.pack(pady=5)
+
+#     button3 = Button(errorBox, font="Calibri 12", text="Ok", bg="blue", fg="white", command=errorBox.destroy)
+#     button3.pack(pady=10)
+
+#     errorBox.mainloop()
+#     get_keywords()
 
 standardLinks = [
     'http://www.eplanning.ie/CarlowCC/SearchExact/Description',
@@ -401,4 +483,6 @@ totalTime = finishTime - beginTime
 
 mins = str(round((totalTime%3600)//60))
 seconds = str(round((totalTime%3600)%60))
+print("\n")
 print("Completed Total in {} mins {} seconds".format(mins, seconds))
+time.sleep(8)
