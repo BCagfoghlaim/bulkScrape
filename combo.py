@@ -37,7 +37,7 @@ def get_keywords():
     root.geometry("400x200")
     root.eval('tk::PlaceWindow . center')
 
-    label1 = Label(root, font="Calibri 14", text="Enter all search terms separated by a comma \n(e.g. data, gas, tunnel) \nThen click 'Run Script': ",justify=CENTER)
+    label1 = Label(root, font="Calibri 14", text="Enter all search terms separated by a comma \n(e.g. data storage, gas, tunnel) \nThen click 'Run Script': ",justify=CENTER)
     label1.pack(pady=5)
 
     words = StringVar()
@@ -149,7 +149,7 @@ for keyword in keywords:
 
 data_frame = data_frame.drop(columns =['Application Status','Decision Due Date','Decision Date','Decision Code'])
 data_frame = data_frame[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term']]
-data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'])
+data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'], format='%d/%m/%Y')
 data_frame['File Number'] = data_frame['File Number'].astype(str)
 bulk_df = data_frame
     
@@ -225,7 +225,7 @@ for keyword in keywords:
 
 data_frame = pd.DataFrame(mainList,columns=['File Number','Local Authority Name','Applicant Name','Development Address','Received Date','Development Description', 'URL', 'Search Term'])
 reorderDf = data_frame[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
-reorderDf['Received Date'] = pd.to_datetime(reorderDf['Received Date'])
+reorderDf['Received Date'] = pd.to_datetime(reorderDf['Received Date'], format='%d/%m/%Y')
 reorderDf['File Number'] = reorderDf['File Number'].astype(str)
 kildare_df = reorderDf
 
@@ -448,7 +448,7 @@ frames = [bulk_df, kildare_df, fingalDL_df, wexford_df]
 
 combo_df = pd.concat(frames)
 
-combo_df = combo_df.drop_duplicates(subset=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL'],keep= 'last')
+combo_df = combo_df.drop_duplicates(subset=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description'],keep= 'last')
 combo_df = combo_df.sort_values(['Received Date', 'Local Authority Name'], ascending=[False, True])
 
 combo_df.to_csv ('combo.csv', index = False)
