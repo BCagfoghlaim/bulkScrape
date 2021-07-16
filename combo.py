@@ -59,21 +59,12 @@ def get_keywords():
     root.mainloop()
 
     entries = words.get()
-
     keywords = entries.split(",")
-    print(keywords)
-
     keywords = [keyword.strip() for keyword in keywords]
-    print(keywords)
-
     keywords = list(filter(None, keywords))
-    print(keywords)
-
     keywords = list(dict.fromkeys(keywords))
-    print(keywords)
     
     if not keywords:
-        # print('empty')
         errorBox = Tk()
         errorBox.title('Error')
         errorBox.geometry("300x100")
@@ -92,22 +83,6 @@ def get_keywords():
 
 
 keywords = get_keywords()
-
-# if not keywords:
-#     # print('empty')
-#     errorBox = Tk()
-#     errorBox.title('Error')
-#     errorBox.geometry("300x100")
-#     errorBox.eval('tk::PlaceWindow . center')
-
-#     errorMsg = Label(errorBox, font="Calibri 12", text='Search Term cannot be blank.\nPlease try again', justify=CENTER)
-#     errorMsg.pack(pady=5)
-
-#     button3 = Button(errorBox, font="Calibri 12", text="Ok", bg="blue", fg="white", command=errorBox.destroy)
-#     button3.pack(pady=10)
-
-#     errorBox.mainloop()
-#     get_keywords()
 
 standardLinks = [
     'http://www.eplanning.ie/CarlowCC/SearchExact/Description',
@@ -483,6 +458,17 @@ totalTime = finishTime - beginTime
 
 mins = str(round((totalTime%3600)//60))
 seconds = str(round((totalTime%3600)%60))
-print("\n")
-print("Completed Total in {} mins {} seconds".format(mins, seconds))
-time.sleep(8)
+timeMsg = "Completed in {} mins {} seconds".format(mins, seconds)
+
+window = Tk()
+window.title('Complete')
+window.geometry("250x100")
+window.eval('tk::PlaceWindow . center')
+
+closingMsg = Label(window, font="Calibri 12", text=timeMsg, justify=CENTER)
+closingMsg.pack(pady=5)
+
+button2 = Button(window, font="Calibri 14", text="Ok", bg="blue", fg="white", command=window.destroy)
+button2.pack(pady=10)
+
+window.mainloop()
