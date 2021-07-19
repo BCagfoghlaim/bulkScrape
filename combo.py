@@ -157,7 +157,7 @@ driver.quit()
 
 endTime = time.time()
 timeDiff = endTime - startTime
-print(f'Completed Bulk in {timeDiff:.2f} seconds (or {timeDiff/60:.2f} minutes)')
+print(f'Completed Bulk in {timeDiff:.2f} seconds')
 
 #---------------------------------KILDARE---------------------------------------------------------------
 
@@ -179,7 +179,7 @@ kildareLink = 'http://webgeo.kildarecoco.ie/planningenquiry'
 for keyword in keywords:
 
     driver.get(kildareLink)
-    time.sleep(1.5)
+    time.sleep(2)
 
     driver.find_element_by_id('cbDateSearch').click()
     dateFrom = driver.find_element_by_id('dateFrom')
@@ -234,7 +234,7 @@ driver.quit()
 endTime = time.time()
 
 timeDiff = endTime - startTime
-print(f'Completed Kildare in {timeDiff:.2f} seconds (or {timeDiff/60:.2f} minutes)')
+print(f'Completed Kildare in {timeDiff:.2f} seconds')
 
 #----------------------------Fingal-Dun Laoghaire--------------------------------------------
 
@@ -340,7 +340,7 @@ driver.quit()
 
 endTime = time.time()
 timeDiff = endTime - startTime
-print(f'Completed Fingal/Dun Laoghaire in {timeDiff:.2f} seconds (or {timeDiff/60:.2f} minutes)')
+print(f'Completed Fingal/Dun Laoghaire in {timeDiff:.2f} seconds')
 
 #------------------------------------Wexford--------------------------------------------------
 
@@ -440,7 +440,7 @@ driver.quit()
 
 endTime = time.time()
 timeDiff = endTime - startTime
-print(f'Completed Wexford in {timeDiff:.2f} seconds (or {timeDiff/60:.2f} minutes)')
+print(f'Completed Wexford in {timeDiff:.2f} seconds')
 
 #----------------------COMBO-------------------------------
 
@@ -450,8 +450,18 @@ combo_df = pd.concat(frames)
 
 combo_df = combo_df.drop_duplicates(subset=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description'],keep= 'last')
 combo_df = combo_df.sort_values(['Received Date', 'Local Authority Name'], ascending=[False, True])
+combo_df["Comments"] = ""
 
-combo_df.to_csv ('combo.csv', index = False)
+existing_df = pd.read_csv('combo.csv')
+existing_df['Received Date'] = pd.to_datetime(existing_df['Received Date'], format = '%d/%m/%Y')
+
+combo_df['Received Date'] = combo_df['Received Date'].dt.date
+
+new_df = pd.concat([combo_df, existing_df])
+new_df['Received Date'] = new_df['Received Date'].astype(str)
+new_df['Received Date'] = pd.to_datetime(new_df['Received Date'])
+new_df = new_df.drop_duplicates(subset=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description'],keep= 'last')
+new_df.to_csv ('combo.csv', index = False)
 
 finishTime = time.time()
 totalTime = finishTime - beginTime
