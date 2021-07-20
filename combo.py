@@ -14,6 +14,7 @@ from selenium.webdriver.support import expected_conditions as EC
 import datetime
 from tkinter import *  
 from tkinter import messagebox, font
+from selenium.common.exceptions import TimeoutException
 
 beginTime = time.time()
 
@@ -26,9 +27,6 @@ data_frame = pd.DataFrame(columns=['File Number','Application Status','Decision 
 
 PATH = 'C:\Program Files (x86)\chromedriver.exe'
 driver = webdriver.Chrome(PATH)
-
-# input_string = input("ENTER ALL SEARCH TERMS SEPEARATED BY A COMMA (e.g. data,gas,tunnel) \n THEN PRESS Enter TO RUN SCRIPT: ")
-# keywords = input_string.split(",")
 
 def get_keywords():
 
@@ -151,6 +149,8 @@ data_frame = data_frame.drop(columns =['Application Status','Decision Due Date',
 data_frame = data_frame[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term']]
 data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'], format='%d/%m/%Y')
 data_frame['File Number'] = data_frame['File Number'].astype(str)
+data_frame['URL'] = data_frame['URL'].str.replace('SearchExact/Description','AppFileRefDetails/')
+data_frame['URL']=data_frame['URL'] + data_frame['File Number'] + '/0'
 bulk_df = data_frame
     
 driver.quit()
@@ -169,59 +169,78 @@ today = datetime.datetime.now().strftime('%d%m%Y')
 PATH = 'C:\Program Files (x86)\chromedriver.exe'
 driver = webdriver.Chrome(PATH)
 
-# keywords = ['data cent', 'data storage', 'datacent', 'data']
-
 mainList = []
 
 wait = WebDriverWait(driver, 10)
 
+attempts = 0
+
 kildareLink = 'http://webgeo.kildarecoco.ie/planningenquiry'
-for keyword in keywords:
+def KildareScript(keywords, attempts):
 
-    driver.get(kildareLink)
-    time.sleep(2)
+    while int(attempts) < 3:
+        print(attempts)
+        try:
+            driver.set_page_load_timeout(30)  
+            for keyword in keywords:
 
-    driver.find_element_by_id('cbDateSearch').click()
-    dateFrom = driver.find_element_by_id('dateFrom')
-    dateFrom.send_keys(yearAgo)
-    dateTo = driver.find_element_by_id('dateTo')
-    dateTo.send_keys(today)
+                        
+                driver.get(kildareLink)
+                # time.sleep(2)
 
-    search = driver.find_element_by_id('txtPlDevDesc')
-    search.send_keys(keyword)
-    search.send_keys(Keys.RETURN)
+                driver.find_element_by_id('cbDateSearch').click()
+                dateFrom = driver.find_element_by_id('dateFrom')
+                dateFrom.send_keys(yearAgo)
+                dateTo = driver.find_element_by_id('dateTo')
+                dateTo.send_keys(today)
 
-    try:
-        grid = wait.until(
-            EC.presence_of_element_located((By.XPATH, '//*[@id="plGrid"]/div[2]/table'))
-        )
-                                                
-        button = driver.find_element_by_xpath('//*[@id="plGrid"]/div[3]/span[1]/span')
-        button.click()
-        button.send_keys('a')
-        button.send_keys(Keys.RETURN)
-        
-        list = []
-        rows = grid.find_elements_by_tag_name("tr")
-        for row in rows:
-            cells = row.find_elements_by_tag_name("td")
-            
-            for cell in cells:
-                celldata = cell.text
-                list.append(celldata)
+                search = driver.find_element_by_id('txtPlDevDesc')
+                search.send_keys(keyword)
+                search.send_keys(Keys.RETURN)
 
-        splitList = [list[i:i + 5] for i in range(0, len(list), 5)]
+                # try:
+                grid = wait.until(
+                    EC.presence_of_element_located((By.XPATH, '//*[@id="plGrid"]/div[2]/table'))
+                )
+                                                        
+                button = driver.find_element_by_xpath('//*[@id="plGrid"]/div[3]/span[1]/span')
+                button.click()
+                button.send_keys('a')
+                button.send_keys(Keys.RETURN)
+                
+                list = []
+                rows = grid.find_elements_by_tag_name("tr")
+                for row in rows:
+                    cells = row.find_elements_by_tag_name("td")
+                    
+                    for cell in cells:
+                        celldata = cell.text
+                        list.append(celldata)
 
-        for list in splitList:
-            list.append('No Description')
-            list.append(kildareLink)
-            list.append(keyword)
+                splitList = [list[i:i + 5] for i in range(0, len(list), 5)]
 
-        for list in splitList:
-            mainList.append(list)
+                for list in splitList:
+                    list.append('No Description')
+                    list.append(kildareLink)
+                    list.append(keyword)
 
-    except Exception:
-        pass
+                for list in splitList:
+                    mainList.append(list)
+                print('success for '+keyword)
+                # except Exception:
+                #     pass
+                
+            attempts = 3
+            print('Done')
+            print(attempts)
+            # break
+        except TimeoutException:
+            print("timeout error")
+            attempts = attempts + 1
+            KildareScript(keywords,attempts)
+        break
+
+KildareScript(keywords,0)
 
 data_frame = pd.DataFrame(mainList,columns=['File Number','Local Authority Name','Applicant Name','Development Address','Received Date','Development Description', 'URL', 'Search Term'])
 reorderDf = data_frame[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
@@ -236,25 +255,24 @@ endTime = time.time()
 timeDiff = endTime - startTime
 print(f'Completed Kildare in {timeDiff:.2f} seconds')
 
-#----------------------------Fingal-Dun Laoghaire--------------------------------------------
+#---------------------------- Dublin --------------------------------------------
 
 startTime = time.time()
 
-yearAgo = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%d/%m/%Y')
-today = datetime.datetime.now().strftime('%d/%m/%Y')
-dateRange = yearAgo+' - '+today
+yearAgo = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%Y-%m-%d')
+today = datetime.datetime.now().strftime('%Y-%m-%d')
 
 data_frame = pd.DataFrame(columns=['Applicant Name', 'DECISION DATE', 'FINAL GRANT DATE', 'Development Address', 'File Number', 'Development Description',	'Received Date', 'Local Authority Name', 'URL', 'Search Term'])
 
 PATH = 'C:\Program Files (x86)\chromedriver.exe'
 driver = webdriver.Chrome(PATH)
-councils = ['fingal', 'dunlaoghaire']
+councils = ['fingal', 'dunlaoghaire', 'dublincity']
 
 # keywords = ['data cent', 'data storage', 'datacent', 'data','tunnel']
 
 for council in councils:
     for keyword in keywords:
-        link = 'https://planning.agileapplications.ie/'+council+'/search-applications/results?criteria=%7B%22openApplications%22:%22false%22,%22proposal%22:%22'+keyword+'%22,%22registrationDateFrom%22:%222020-07-08%22,%22registrationDateTo%22:%222021-07-08%22%7D'
+        link = 'https://planning.agileapplications.ie/'+council+'/search-applications/results?criteria=%7B%22proposal%22:%22'+keyword+'%22,%22openApplications%22:%22false%22,%22registrationDateFrom%22:%22'+yearAgo+'%22,%22registrationDateTo%22:%22'+today+'%22%7D'
        
         driver.get(link)
 
@@ -321,6 +339,10 @@ for council in councils:
                     section.append(keyword)
                 elif 'dunlaoghaire' in link:
                     section.append('Dun Laoghaire Co. Co.')
+                    section.append(link)
+                    section.append(keyword)
+                elif 'dublincity' in link:
+                    section.append('Dublin City Council')
                     section.append(link)
                     section.append(keyword)
                 else:
@@ -453,14 +475,18 @@ combo_df = combo_df.sort_values(['Received Date', 'Local Authority Name'], ascen
 combo_df["Comments"] = ""
 
 existing_df = pd.read_csv('combo.csv')
-existing_df['Received Date'] = pd.to_datetime(existing_df['Received Date'], format = '%d/%m/%Y')
-
+print(existing_df)
+try:
+    existing_df['Received Date'] = pd.to_datetime(existing_df['Received Date'], format = '%d/%m/%Y')
+except Exception:
+    pass
 combo_df['Received Date'] = combo_df['Received Date'].dt.date
 
 new_df = pd.concat([combo_df, existing_df])
 new_df['Received Date'] = new_df['Received Date'].astype(str)
 new_df['Received Date'] = pd.to_datetime(new_df['Received Date'])
 new_df = new_df.drop_duplicates(subset=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description'],keep= 'last')
+new_df = new_df.sort_values(['Received Date', 'Local Authority Name'], ascending=[False, True])
 new_df.to_csv ('combo.csv', index = False)
 
 finishTime = time.time()
