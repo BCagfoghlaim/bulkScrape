@@ -155,8 +155,6 @@ data_frame['File Number'] = data_frame['File Number'].astype(str)
 data_frame['URL'] = data_frame['URL'].str.replace('SearchExact/Description','AppFileRefDetails/')
 data_frame['URL']=data_frame['URL'] + data_frame['File Number'] + '/0'
 bulk_df = data_frame
-    
-driver.quit()
 
 endTime = time.time()
 timeDiff = endTime - startTime
@@ -168,11 +166,6 @@ startTime = time.time()
 
 yearAgo = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%d%m%Y')
 today = datetime.datetime.now().strftime('%d%m%Y')
-
-PATH = 'C:\Program Files (x86)\chromedriver.exe'
-driver = webdriver.Chrome(PATH)
-
-# keywords = ['data cent', 'data storage', 'datacent', 'data']
 
 mainList = []
 
@@ -253,8 +246,6 @@ reorderDf['Received Date'] = pd.to_datetime(reorderDf['Received Date'], format='
 reorderDf['File Number'] = reorderDf['File Number'].astype(str)
 kildare_df = reorderDf
 
-driver.quit()
-
 endTime = time.time()
 
 timeDiff = endTime - startTime
@@ -269,11 +260,7 @@ today = datetime.datetime.now().strftime('%Y-%m-%d')
 
 data_frame = pd.DataFrame(columns=['Applicant Name', 'DECISION DATE', 'FINAL GRANT DATE', 'Development Address', 'File Number', 'Development Description',	'Received Date', 'Local Authority Name', 'URL', 'Search Term'])
 
-PATH = 'C:\Program Files (x86)\chromedriver.exe'
-driver = webdriver.Chrome(PATH)
 councils = ['fingal', 'dunlaoghaire', 'dublincity']
-
-# keywords = ['data cent', 'data storage', 'datacent', 'data','tunnel']
 
 for council in councils:
     for keyword in keywords:
@@ -363,8 +350,6 @@ data_frame = data_frame[['File Number','Received Date','Local Authority Name','A
 fingalDL_df = data_frame
 #-------------------------------------------------- CODE
    
-driver.quit()
-
 endTime = time.time()
 timeDiff = endTime - startTime
 print(f'Completed Dublin in {timeDiff:.2f} seconds')
@@ -374,11 +359,6 @@ print(f'Completed Dublin in {timeDiff:.2f} seconds')
 startTime = time.time()
 
 data_frame = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term'])
-
-PATH = 'C:\Program Files (x86)\chromedriver.exe'
-driver = webdriver.Chrome(PATH)
-
-# keywords = ['house']
 
 link = 'https://dms.wexfordcoco.ie/advanced.php'
 
@@ -504,10 +484,8 @@ new_df = new_df.sort_values(['Received Date', 'Local Authority Name'], ascending
 new_df['Comments'] = new_df['Comments'].fillna('')
 # new_df = new_df.rename(columns={'File Number': 'File No.'})
 # new_df = new_df[['File No.','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term', 'Comments']]
-# new_df.reset_index(drop=True)
 new_df = new_df.reset_index(drop=True)
 new_df.to_csv ('Planning Applications.csv', index = False)
-print(new_df)
 
 #Upload to Google Sheets
 scope = ['https://spreadsheets.google.com/feeds',
@@ -521,8 +499,6 @@ gc = gspread.authorize(credentials)
 spreadsheet_key = '1ajEtdL9kquS-zB01gf1JR_L6gW0U7_yc8GzcAyLNZp8'
 wks_name = 'Sheet1'
 d2g.upload(new_df, spreadsheet_key, wks_name, credentials=credentials, row_names=False)
-
-
 
 
 finishTime = time.time()
