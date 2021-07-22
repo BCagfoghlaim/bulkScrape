@@ -15,6 +15,9 @@ import datetime
 from tkinter import *  
 from tkinter import messagebox, font
 from selenium.common.exceptions import TimeoutException
+import gspread
+from df2gspread import df2gspread as d2g
+from oauth2client.service_account import ServiceAccountCredentials
 
 beginTime = time.time()
 
@@ -168,6 +171,8 @@ today = datetime.datetime.now().strftime('%d%m%Y')
 
 PATH = 'C:\Program Files (x86)\chromedriver.exe'
 driver = webdriver.Chrome(PATH)
+
+# keywords = ['data cent', 'data storage', 'datacent', 'data']
 
 mainList = []
 
@@ -362,7 +367,7 @@ driver.quit()
 
 endTime = time.time()
 timeDiff = endTime - startTime
-print(f'Completed Fingal/Dun Laoghaire in {timeDiff:.2f} seconds')
+print(f'Completed Dublin in {timeDiff:.2f} seconds')
 
 #------------------------------------Wexford--------------------------------------------------
 
@@ -474,7 +479,12 @@ combo_df = combo_df.drop_duplicates(subset=['File Number','Received Date','Local
 combo_df = combo_df.sort_values(['Received Date', 'Local Authority Name'], ascending=[False, True])
 combo_df["Comments"] = ""
 
-existing_df = pd.read_csv('combo.csv')
+# existing_df = pd.read_csv('Planning Applications.csv')
+sheet_url = 'https://docs.google.com/spreadsheets/d/1ajEtdL9kquS-zB01gf1JR_L6gW0U7_yc8GzcAyLNZp8/export?format=csv&gid=0'
+
+# existing_df = pd.read_csv(sheet_url,index_col=False)
+existing_df = pd.read_csv(sheet_url)
+
 print(existing_df)
 try:
     existing_df['Received Date'] = pd.to_datetime(existing_df['Received Date'], format = '%d/%m/%Y')
@@ -485,9 +495,35 @@ combo_df['Received Date'] = combo_df['Received Date'].dt.date
 new_df = pd.concat([combo_df, existing_df])
 new_df['Received Date'] = new_df['Received Date'].astype(str)
 new_df['Received Date'] = pd.to_datetime(new_df['Received Date'])
+
+new_df['Received Date'] = pd.to_datetime(new_df['Received Date']).dt.date
+# new_df['Received Date'] = pd.to_datetime(new_df['Received Date'], format = '%d/%m/%Y').dt.date
+
 new_df = new_df.drop_duplicates(subset=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description'],keep= 'last')
 new_df = new_df.sort_values(['Received Date', 'Local Authority Name'], ascending=[False, True])
-new_df.to_csv ('combo.csv', index = False)
+new_df['Comments'] = new_df['Comments'].fillna('')
+# new_df = new_df.rename(columns={'File Number': 'File No.'})
+# new_df = new_df[['File No.','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term', 'Comments']]
+# new_df.reset_index(drop=True)
+new_df = new_df.reset_index(drop=True)
+new_df.to_csv ('Planning Applications.csv', index = False)
+print(new_df)
+
+#Upload to Google Sheets
+scope = ['https://spreadsheets.google.com/feeds',
+         'https://www.googleapis.com/auth/drive']
+
+credentials = ServiceAccountCredentials.from_json_keyfile_name(
+    'submissions-scraper-bd2899000cbd.json', scope)
+    
+gc = gspread.authorize(credentials)
+
+spreadsheet_key = '1ajEtdL9kquS-zB01gf1JR_L6gW0U7_yc8GzcAyLNZp8'
+wks_name = 'Sheet1'
+d2g.upload(new_df, spreadsheet_key, wks_name, credentials=credentials, row_names=False)
+
+
+
 
 finishTime = time.time()
 totalTime = finishTime - beginTime
