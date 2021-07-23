@@ -195,39 +195,45 @@ def KildareScript(keywords, attempts):
                 search = driver.find_element_by_id('txtPlDevDesc')
                 search.send_keys(keyword)
                 search.send_keys(Keys.RETURN)
+                time.sleep(2)
 
-                # try:
-                grid = wait.until(
-                    EC.presence_of_element_located((By.XPATH, '//*[@id="plGrid"]/div[2]/table'))
-                )
-                                                        
-                button = driver.find_element_by_xpath('//*[@id="plGrid"]/div[3]/span[1]/span')
-                button.click()
-                button.send_keys('a')
-                button.send_keys(Keys.RETURN)
+                noResults = driver.find_element_by_id('noResultsPlGridDiv')
+    
+                if noResults.is_displayed():
+                    print('No results for '+keyword)
                 
-                list = []
-                rows = grid.find_elements_by_tag_name("tr")
-                for row in rows:
-                    cells = row.find_elements_by_tag_name("td")
+                else:
+                    grid = wait.until(
+                        EC.presence_of_element_located((By.XPATH, '//*[@id="plGrid"]/div[2]/table'))
+                    )
+                                                            
+                    button = driver.find_element_by_xpath('//*[@id="plGrid"]/div[3]/span[1]/span')
+                    button.click()
+                    button.send_keys('a')
+                    button.send_keys(Keys.RETURN)
                     
-                    for cell in cells:
-                        celldata = cell.text
-                        list.append(celldata)
+                    list = []
+                    rows = grid.find_elements_by_tag_name("tr")
+                    for row in rows:
+                        cells = row.find_elements_by_tag_name("td")
+                        
+                        for cell in cells:
+                            celldata = cell.text
+                            list.append(celldata)
 
-                splitList = [list[i:i + 5] for i in range(0, len(list), 5)]
+                    splitList = [list[i:i + 5] for i in range(0, len(list), 5)]
 
-                for list in splitList:
-                    list.append('No Description')
-                    list.append(kildareLink)
-                    list.append(keyword)
+                    for list in splitList:
+                        list.append('No Description')
+                        list.append(kildareLink)
+                        list.append(keyword)
 
-                for list in splitList:
-                    mainList.append(list)
-                print('success for '+keyword)
-                # except Exception:
-                #     pass
-                
+                    for list in splitList:
+                        mainList.append(list)
+                    print('success for '+keyword)
+                    # except Exception:
+                    #     pass
+                    
             attempts = 3
             print('Done')
             print(attempts)
@@ -465,7 +471,6 @@ sheet_url = 'https://docs.google.com/spreadsheets/d/1ajEtdL9kquS-zB01gf1JR_L6gW0
 # existing_df = pd.read_csv(sheet_url,index_col=False)
 existing_df = pd.read_csv(sheet_url)
 
-print(existing_df)
 try:
     existing_df['Received Date'] = pd.to_datetime(existing_df['Received Date'], format = '%d/%m/%Y')
 except Exception:
@@ -499,6 +504,8 @@ gc = gspread.authorize(credentials)
 spreadsheet_key = '1ajEtdL9kquS-zB01gf1JR_L6gW0U7_yc8GzcAyLNZp8'
 wks_name = 'Sheet1'
 d2g.upload(new_df, spreadsheet_key, wks_name, credentials=credentials, row_names=False)
+
+
 
 
 finishTime = time.time()
