@@ -206,41 +206,48 @@ def KildareScript(keywords, attempts):
                 search.send_keys(keyword)
                 search.send_keys(Keys.RETURN)
 
-                # try:
-                grid = wait.until(
-                    EC.presence_of_element_located((By.XPATH, '//*[@id="plGrid"]/div[2]/table'))
-                )
-                                                        
-                button = driver.find_element_by_xpath('//*[@id="plGrid"]/div[3]/span[1]/span')
-                button.click()
-                button.send_keys('a')
-                button.send_keys(Keys.RETURN)
+                time.sleep(2)
+
+                noResults = driver.find_element_by_id('noResultsPlGridDiv')
+    
+                if noResults.is_displayed():
+                    print('No Kildare results for '+keyword)
                 
-                list = []
-                rows = grid.find_elements_by_tag_name("tr")
-                for row in rows:
-                    cells = row.find_elements_by_tag_name("td")
+                else:                
+                    grid = wait.until(
+                        EC.presence_of_element_located((By.XPATH, '//*[@id="plGrid"]/div[2]/table'))
+                    )
+                                                            
+                    button = driver.find_element_by_xpath('//*[@id="plGrid"]/div[3]/span[1]/span')
+                    button.click()
+                    button.send_keys('a')
+                    button.send_keys(Keys.RETURN)
                     
-                    for cell in cells:
-                        celldata = cell.text
-                        list.append(celldata)
+                    list = []
+                    rows = grid.find_elements_by_tag_name("tr")
+                    for row in rows:
+                        cells = row.find_elements_by_tag_name("td")
+                        
+                        for cell in cells:
+                            celldata = cell.text
+                            list.append(celldata)
 
-                splitList = [list[i:i + 5] for i in range(0, len(list), 5)]
+                    splitList = [list[i:i + 5] for i in range(0, len(list), 5)]
 
-                for list in splitList:
-                    list.append('No Description')
-                    list.append(kildareLink)
-                    list.append(keyword)
+                    for list in splitList:
+                        list.append('No Description')
+                        list.append(kildareLink)
+                        list.append(keyword)
 
-                for list in splitList:
-                    mainList.append(list)
-                print('success for '+keyword)
-                # except Exception:
-                #     pass
-                
+                    for list in splitList:
+                        mainList.append(list)
+                    print('success for '+keyword)
+                    # except Exception:
+                    #     pass
+                    
             attempts = 3
             print('Done')
-            print(attempts)
+            # print(attempts)
             # break
         except TimeoutException:
             print("timeout error")
@@ -473,10 +480,94 @@ endTime = time.time()
 timeDiff = endTime - startTime
 print(f'Completed Wexford in {timeDiff:.2f} seconds')
 
+#----------------------South Dublin------------------------
+startTime = time.time()
+
+yearAgo = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%d/%m/%Y')
+
+data_frame = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
+tempdf = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
+
+link = 'http://www.sdublincoco.ie/Planning/Applications?p=1&prop='+keyword
+
+for keyword in keywords:
+
+    driver.get(link)
+
+    html = driver.page_source
+    soup = BeautifulSoup(html, "lxml")
+
+    fileNos = soup.findAll("h3",{"class":"responsiveheader"})
+    rows = soup.findAll("dl")
+
+    results = soup.find("li",{"class":"totals"})
+    resultsFigure = results.get_text(strip=True)
+    firstNum = resultsFigure[4:7]
+    lastNum = resultsFigure[9:16]
+    firstNum = int(''.join(i for i in firstNum if i.isdigit()))
+    lastNum = lastNum[:lastNum.index("(")]
+    lastNum = int(''.join(i for i in lastNum if i.isdigit()))
+
+    while firstNum <= lastNum:
+        tempdf = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
+        html = driver.page_source
+        soup = BeautifulSoup(html, "lxml")
+
+        fileNos = soup.findAll("h3",{"class":"responsiveheader"})
+        rows = soup.findAll("dl")
+
+        fileNumbers = []
+        dates = []
+        applicants =[]
+        addresses = []
+
+        for fileNo in fileNos:
+            data = fileNo.get_text(strip=True)
+            fileNumbers.append(data)
+
+        list = []
+        for row in rows:
+            cells = row.findAll("dd")   
+            for cell in cells:
+                data = cell.get_text(strip=True)
+                list.append(data)
+
+        splitList = [list[i:i + 4] for i in range(0, len(list), 4)]
+
+        for miniList in splitList:
+            dates.append(miniList[0])
+            applicants.append(miniList[2])
+            addresses.append(miniList[3])
+
+        firstNum = firstNum + 1   
+        try:
+            driver.find_element_by_xpath('//*[@id="main"]/div[2]/div/div[1]/div/div/table/caption/ul/li[4]/a').click()
+        except Exception:
+            pass
+
+        tempdf['File Number'] = fileNumbers
+        tempdf['Received Date'] = dates
+        tempdf['Local Authority Name'] = 'South Dublin Co. Co.'
+        tempdf['Applicant Name'] = applicants
+        tempdf['Development Address'] = addresses
+        tempdf['Development Description'] = 'No Description'
+        tempdf['URL'] = link
+        tempdf['Search Term'] = keyword
+
+        data_frame = data_frame.append(tempdf, ignore_index=True)
+
+data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'], format='%d/%m/%Y')
+# data_frame = data_frame[(data_frame['Received Date'] >= yearAgo)]
+southDublin_df = data_frame
+
+driver.quit()
+
+endTime = time.time()
+timeDiff = endTime - startTime
+print(f'Completed South Dublin in {timeDiff:.2f} seconds')
 #----------------------COMBO-------------------------------
 
-frames = [bulk_df, kildare_df, fingalDL_df, wexford_df]
-
+frames = [bulk_df, kildare_df, fingalDL_df, wexford_df, southDublin_df]
 combo_df = pd.concat(frames)
 
 combo_df = combo_df.drop_duplicates(subset=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description'],keep= 'last')
