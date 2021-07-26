@@ -179,13 +179,11 @@ kildareLink = 'http://webgeo.kildarecoco.ie/planningenquiry'
 def KildareScript(keywords, attempts):
 
     while int(attempts) < 3:
-        print(attempts)
         try:
             driver.set_page_load_timeout(30)  
             for keyword in keywords:
    
                 driver.get(kildareLink)
-                # time.sleep(2)
 
                 driver.find_element_by_id('cbDateSearch').click()
                 dateFrom = driver.find_element_by_id('dateFrom')
@@ -201,7 +199,8 @@ def KildareScript(keywords, attempts):
                 noResults = driver.find_element_by_id('noResultsPlGridDiv')
     
                 if noResults.is_displayed():
-                    print('No results for '+keyword)
+                    # print('No Kildare results for '+keyword)
+                    print('-------------------------------')
                 
                 else:                
                     grid = wait.until(
@@ -231,12 +230,11 @@ def KildareScript(keywords, attempts):
 
                     for list in splitList:
                         mainList.append(list)
-                    print('success for '+keyword)
+                    # print('success for '+keyword)
                                         
             attempts = 3
-            print('Done')
-            print(attempts)
-            # break
+            # print('Done')
+
         except TimeoutException:
             print("timeout error")
             attempts = attempts + 1
@@ -305,7 +303,6 @@ for council in councils:
             except Exception:
                 pass
                 
-            #CODE -------------------------------------------------
             html = driver.page_source
             soup = BeautifulSoup(html, "lxml")
 
@@ -352,7 +349,6 @@ for council in councils:
 data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'])
 data_frame = data_frame[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
 fingalDL_df = data_frame
-#-------------------------------------------------- CODE
    
 endTime = time.time()
 timeDiff = endTime - startTime
@@ -420,7 +416,6 @@ for keyword in keywords:
         for td in tds:
             data = td.get_text(strip=True)
             applicants.append(data)   
-
         
         tds = soup.find_all('div', style='text-align: left; width: 275px; white-space: normal;')
         for td in tds:
@@ -447,15 +442,98 @@ data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'])
 data_frame['File Number'] = data_frame['File Number'].astype(str)
 wexford_df = data_frame
 
-driver.quit()
-
 endTime = time.time()
 timeDiff = endTime - startTime
 print(f'Completed Wexford in {timeDiff:.2f} seconds')
 
+#----------------------South Dublin------------------------
+startTime = time.time()
+
+yearAgo = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%d/%m/%Y')
+
+data_frame = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
+tempdf = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
+
+link = 'http://www.sdublincoco.ie/Planning/Applications?p=1&prop='+keyword
+
+for keyword in keywords:
+
+    driver.get(link)
+
+    html = driver.page_source
+    soup = BeautifulSoup(html, "lxml")
+
+    fileNos = soup.findAll("h3",{"class":"responsiveheader"})
+    rows = soup.findAll("dl")
+
+    results = soup.find("li",{"class":"totals"})
+    resultsFigure = results.get_text(strip=True)
+    firstNum = resultsFigure[4:7]
+    lastNum = resultsFigure[9:16]
+    firstNum = int(''.join(i for i in firstNum if i.isdigit()))
+    lastNum = lastNum[:lastNum.index("(")]
+    lastNum = int(''.join(i for i in lastNum if i.isdigit()))
+
+    while firstNum <= lastNum:
+        tempdf = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
+        html = driver.page_source
+        soup = BeautifulSoup(html, "lxml")
+
+        fileNos = soup.findAll("h3",{"class":"responsiveheader"})
+        rows = soup.findAll("dl")
+
+        fileNumbers = []
+        dates = []
+        applicants =[]
+        addresses = []
+
+        for fileNo in fileNos:
+            data = fileNo.get_text(strip=True)
+            fileNumbers.append(data)
+
+        list = []
+        for row in rows:
+            cells = row.findAll("dd")   
+            for cell in cells:
+                data = cell.get_text(strip=True)
+                list.append(data)
+
+        splitList = [list[i:i + 4] for i in range(0, len(list), 4)]
+
+        for miniList in splitList:
+            dates.append(miniList[0])
+            applicants.append(miniList[2])
+            addresses.append(miniList[3])
+
+        firstNum = firstNum + 1   
+        try:
+            driver.find_element_by_xpath('//*[@id="main"]/div[2]/div/div[1]/div/div/table/caption/ul/li[4]/a').click()
+        except Exception:
+            pass
+
+        tempdf['File Number'] = fileNumbers
+        tempdf['Received Date'] = dates
+        tempdf['Local Authority Name'] = 'South Dublin Co. Co.'
+        tempdf['Applicant Name'] = applicants
+        tempdf['Development Address'] = addresses
+        tempdf['Development Description'] = 'No Description'
+        tempdf['URL'] = link
+        tempdf['Search Term'] = keyword
+
+        data_frame = data_frame.append(tempdf, ignore_index=True)
+
+data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'], format='%d/%m/%Y')
+data_frame = data_frame[(data_frame['Received Date'] >= yearAgo)]
+southDublin_df = data_frame
+
+driver.quit()
+
+endTime = time.time()
+timeDiff = endTime - startTime
+print(f'Completed South Dublin in {timeDiff:.2f} seconds')
 #----------------------COMBO-------------------------------
 
-frames = [bulk_df, kildare_df, fingalDL_df, wexford_df]
+frames = [bulk_df, kildare_df, fingalDL_df, wexford_df, southDublin_df]
 
 combo_df = pd.concat(frames)
 
@@ -466,6 +544,7 @@ combo_df["Comments"] = ""
 # existing_df = pd.read_csv('Planning Applications.csv')
 sheet_url = 'https://docs.google.com/spreadsheets/d/1ajEtdL9kquS-zB01gf1JR_L6gW0U7_yc8GzcAyLNZp8/export?format=csv&gid=0'
 
+# existing_df = pd.read_csv(sheet_url,index_col=False)
 existing_df = pd.read_csv(sheet_url)
 
 try:
@@ -494,7 +573,7 @@ scope = ['https://spreadsheets.google.com/feeds',
          'https://www.googleapis.com/auth/drive']
 
 credentials = ServiceAccountCredentials.from_json_keyfile_name(
-    'submissions-scraper-bd2899000cbd.json', scope)
+    'submissions-scraper-creds.json', scope)
     
 gc = gspread.authorize(credentials)
 
