@@ -451,8 +451,10 @@ startTime = time.time()
 
 yearAgo = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%d/%m/%Y')
 
-data_frame = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
-tempdf = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
+# data_frame = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
+# tempdf = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
+data_frame = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term'])
+tempdf = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term'])
 
 link = 'http://www.sdublincoco.ie/Planning/Applications?p=1&prop='+keyword
 
@@ -475,7 +477,8 @@ for keyword in keywords:
     lastNum = int(''.join(i for i in lastNum if i.isdigit()))
 
     while firstNum <= lastNum:
-        tempdf = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
+        # tempdf = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term', 'Comments'])
+        tempdf = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term'])
         html = driver.page_source
         soup = BeautifulSoup(html, "lxml")
 
@@ -526,14 +529,75 @@ data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'], format
 data_frame = data_frame[(data_frame['Received Date'] >= yearAgo)]
 southDublin_df = data_frame
 
-driver.quit()
-
 endTime = time.time()
 timeDiff = endTime - startTime
 print(f'Completed South Dublin in {timeDiff:.2f} seconds')
+
+#--------------An Bord Pleanala - SID-----------------------
+
+this_year = str(datetime.datetime.now().year)
+
+link = 'https://www.pleanala.ie/en-ie/lists/cases?list=I&year='+this_year
+
+driver.get(link)
+
+no_cookies = WebDriverWait(driver, 30).until(
+                        EC.element_to_be_clickable((By.XPATH, '//*[@id="ccc-reject-settings"]/span'))
+                    )
+no_cookies.click()
+driver.find_element_by_xpath('//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div[1]/a/span[3]/em').click()
+
+html = driver.page_source
+soup = BeautifulSoup(html, "lxml")
+
+sections = soup.findAll("h2", {"class":"cell"})
+
+addresses = []
+locations = soup.findAll("span", {"class":"title"})  
+for location in locations:
+    info = location.get_text(strip=True)
+    addresses.append(info)
+
+applicants = []
+parties = driver.find_elements_by_xpath('//*[@id="maincontent"]/div/div/div/div/div/div/div/div/div/a/div/ul/li[1]')
+for party in parties:
+    info = party.text
+    applicants.append(info)
+
+list = []
+cells = soup.findAll("span", {"class":"details"})   
+for cell in cells:
+    data = cell.get_text(strip=True)
+    list.append(data)
+
+splitList = [list[i:i + 6] for i in range(0, len(list), 6)]
+
+currentLink = driver.current_url
+
+for list in splitList:
+    list.append('An Bord Pleanala - SID')
+    list.append(currentLink)
+    list.append('N/A for SID')
+    
+df = pd.DataFrame(splitList, columns = ['File Number', 'Due Date', 'Development Description', 'Received Date', 'EIAR', 'NIS', 'Local Authority Name', 'URL', 'Search Term'])
+df['Applicant Name'] = applicants
+df = df.drop(columns =['EIAR', 'NIS'])
+df['Development Address'] = addresses
+sid_df = df[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
+sid_df['File Number'] = sid_df['File Number'].str.replace('Case reference:','')
+sid_df['Received Date'] = sid_df['Received Date'].str.replace('Date lodged:','')
+sid_df['Development Description'] = sid_df['Development Description'].str.replace('Description:','')
+sid_df['Received Date'] = pd.to_datetime(sid_df['Received Date'], format='%d/%m/%Y')
+
+endTime = time.time()
+timeDiff = endTime - startTime
+print(f'Completed An Bord Pleanala in {timeDiff:.2f} seconds')
+
+driver.quit()
+
 #----------------------COMBO-------------------------------
 
-frames = [bulk_df, kildare_df, fingalDL_df, wexford_df, southDublin_df]
+frames = [bulk_df, kildare_df, fingalDL_df, wexford_df, southDublin_df,sid_df]
 
 combo_df = pd.concat(frames)
 
