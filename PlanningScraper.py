@@ -18,12 +18,13 @@ from webdriver_manager.chrome import ChromeDriverManager
 from googleapiclient import discovery
 from threading import Thread
 import os
-
-beginTime = time.time()
+import webbrowser
 
 # PATH = 'C:\Program Files (x86)\chromedriver.exe'
 # driver = webdriver.Chrome(PATH)
 driver = webdriver.Chrome(ChromeDriverManager().install())
+
+webbrowser.open('https://docs.google.com/document/d/1NaPebm8APnIIxhmamL-VQwPF1p16jTP3O4ac4dqAoqQ/edit')
 
 def get_keywords():
 
@@ -77,6 +78,8 @@ def get_keywords():
     return keywords
 
 keywords = get_keywords()
+
+beginTime = time.time()
 
 #-------------------------Bulk------------------------------------
 
@@ -621,7 +624,7 @@ def ABP(iterations):
     sid_df['Received Date'] = pd.to_datetime(sid_df['Received Date'], format='%d/%m/%Y')
     sid_df['Deadline'] = sid_df['Received Date'] + pd.Timedelta(days=39)
     sid_df = sid_df[['File Number','Received Date','Local Authority Name', 'Deadline', 'Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
-    sid_df.to_csv ('ABP Function.csv', index = False)
+    sid_df.to_csv('ABP Function.csv', index = False)
     endTime = time.time()
     timeDiff = endTime - startTime
     print(f'Completed An Bord Pleanala in {timeDiff:.2f} seconds')
@@ -838,11 +841,11 @@ totalTime = finishTime - beginTime
 
 mins = str(round((totalTime%3600)//60))
 seconds = str(round((totalTime%3600)%60))
-timeMsg = "Completed in {} mins {} seconds".format(mins, seconds)
+timeMsg = "Completed in {} mins {} seconds\nNow check the red lines in the spreadsheet".format(mins, seconds)
 
 window = Tk()
 window.title('Complete')
-window.geometry("250x100")
+window.geometry("350x100")
 window.eval('tk::PlaceWindow . center')
 
 closingMsg = Label(window, font="Calibri 12", text=timeMsg, justify=CENTER)
@@ -852,3 +855,5 @@ button2 = Button(window, font="Calibri 14", text="Ok", bg="blue", fg="white", co
 button2.pack(pady=10)
 
 window.mainloop()
+
+webbrowser.open('https://docs.google.com/spreadsheets/d/1ajEtdL9kquS-zB01gf1JR_L6gW0U7_yc8GzcAyLNZp8/edit#gid=0')
