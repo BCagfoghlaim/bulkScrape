@@ -815,7 +815,7 @@ request_body = {
                         'sheetId': 0,
                         'startRowIndex': 0,
                         'startColumnIndex': 0 ,
-                        'endColumnIndex': 10 
+                        'endColumnIndex': 11 
                     }
                 }
             }
