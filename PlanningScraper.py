@@ -19,6 +19,7 @@ from googleapiclient import discovery
 from threading import Thread
 import os
 import webbrowser
+import sys
 
 # PATH = 'C:\Program Files (x86)\chromedriver.exe'
 # driver = webdriver.Chrome(PATH)
@@ -48,7 +49,7 @@ def get_keywords():
         if messagebox.askokcancel("Quit", "Do you want to quit?"):
             root.destroy()
             driver.quit()
-            exit()
+            sys.exit()
 
     root.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -71,9 +72,11 @@ def get_keywords():
 
         button3 = Button(errorBox, font="Calibri 12", text="Ok", bg="blue", fg="white", command=errorBox.destroy)
         button3.pack(pady=10)
-
+        
         errorBox.mainloop()
-        get_keywords()
+        # get_keywords()
+        driver.quit()
+        sys.exit()
 
     return keywords
 
@@ -549,9 +552,20 @@ def ABP(iterations):
 
     for item in iterations:
         sixthdriver.get(link)
+        try:
+            no_cookies = WebDriverWait(sixthdriver, 10).until(
+                                EC.element_to_be_clickable((By.XPATH, '//*[@id="ccc-reject-settings"]/span'))
+                            )
+            no_cookies.click()
+        except:
+            pass
        
-        sixthdriver.find_element_by_xpath('//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a').click()
-        
+        # sixthdriver.find_element_by_xpath('//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a').click()
+        card = WebDriverWait(sixthdriver, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a'))
+                        )
+        card.click()
+
         html = sixthdriver.page_source
         soup = BeautifulSoup(html, "lxml")
 
@@ -631,13 +645,14 @@ def ABP(iterations):
     # return sid_df
 
 #--------------Department Consultations--------------------
+yearAgoString = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%d/%m/%Y')
+yearAgo = time.strptime(yearAgoString, "%d/%m/%Y")
+
 def deptCons():
     startTime = time.time()
 
     deptCons_df = pd.DataFrame(columns=['Received Date''Development Description'])
 
-    # PATH = 'C:\Program Files (x86)\chromedriver.exe'
-    # driver = webdriver.Chrome(PATH)
     seventhdriver = webdriver.Chrome(ChromeDriverManager().install())
 
     link = 'https://www.gov.ie/en/search/?type=consultations&organisation=department-of-the-environment-climate-and-communications'
@@ -651,7 +666,8 @@ def deptCons():
     
     finalList = []
 
-    for page in range(totalPageNum):
+    page = 0
+    while page < totalPageNum:
         html = seventhdriver.page_source
         soup = BeautifulSoup(html, "lxml")
                     
@@ -687,10 +703,20 @@ def deptCons():
         except:
             pass
         
-        for i in range(len(dates)):    
-            finalList.append(dates[i])
-            finalList.append(descriptons[i])
-            finalList.append(links[i])
+        i = 0
+        while i < len(dates):
+            thisDate = dates[i].strip()
+            realDate = datetime.datetime.strptime(thisDate, '%d %B %Y').strftime('%d/%m/%Y')
+            actualDate = time.strptime(realDate, "%d/%m/%Y")
+            if actualDate  > yearAgo:
+                finalList.append(dates[i])
+                finalList.append(descriptons[i])
+                finalList.append(links[i])
+                i = i + 1
+
+            else:
+                page = totalPageNum
+                i = len(dates)
 
         page = page+1
 
@@ -716,8 +742,6 @@ def deptCons():
     timeDiff = endTime - startTime
     print(f'Completed Dept Consultations in {timeDiff:.2f} seconds')
     # return deptCons_df
-
-deptCons()
 
 #----------------------Threads-----------------------------
 t1 = Thread(target=bulk,args=(keywords,standardLinks,))
@@ -762,24 +786,21 @@ frames = [general_deadline, sid_df, deptCons_df]
 
 combo_df = pd.concat(frames)
 combo_df = combo_df[['File Number', 'Received Date', 'Local Authority Name', 'Deadline', 'Applicant Name', 'Development Address', 'Development Description', 'URL', 'Search Term']]
-combo_df = combo_df.drop_duplicates(subset=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description'],keep= 'last')
-combo_df = combo_df.sort_values(['Deadline', 'Local Authority Name'], ascending=[False, True])
 combo_df["Comments"] = ""
 
 # existing_df = pd.read_csv('Planning Applications.csv')
 sheet_url = 'https://docs.google.com/spreadsheets/d/1ajEtdL9kquS-zB01gf1JR_L6gW0U7_yc8GzcAyLNZp8/export?format=csv&gid=0'
 
-# existing_df = pd.read_csv(sheet_url,index_col=False)
 existing_df = pd.read_csv(sheet_url)
 
 try:
     existing_df['Received Date'] = pd.to_datetime(existing_df['Received Date'], format = '%d/%m/%Y')
 except Exception:
     pass
-# combo_df['Received Date'] = combo_df['Received Date'].dt.date
+
 new_df = pd.concat([combo_df, existing_df])
+new_df['File Number'] = new_df['File Number'].astype(str)
 new_df['Received Date'] = new_df['Received Date'].astype(str)
-new_df['Received Date'] = pd.to_datetime(new_df['Received Date'])
 
 new_df['Received Date'] = pd.to_datetime(new_df['Received Date']).dt.date
 new_df['Deadline'] = pd.to_datetime(new_df['Deadline']).dt.date
@@ -787,6 +808,7 @@ new_df['Deadline'] = pd.to_datetime(new_df['Deadline']).dt.date
 new_df = new_df.drop_duplicates(subset=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description'],keep= 'last')
 new_df = new_df.sort_values(['Deadline', 'Local Authority Name'], ascending=[False, True])
 new_df['Comments'] = new_df['Comments'].fillna('')
+new_df['Show Public'] = new_df['Show Public'].fillna('-')
 new_df = new_df.reset_index(drop=True)
 new_df.to_csv ('Planning Applications.csv', index = False)
 
@@ -802,6 +824,26 @@ gc = gspread.authorize(credentials)
 spreadsheet_key = '1ajEtdL9kquS-zB01gf1JR_L6gW0U7_yc8GzcAyLNZp8'
 wks_name = 'Sheet1'
 d2g.upload(new_df, spreadsheet_key, wks_name, credentials=credentials, row_names=False)
+
+finishTime = time.time()
+totalTime = finishTime - beginTime
+
+mins = str(round((totalTime%3600)//60))
+seconds = str(round((totalTime%3600)%60))
+timeMsg = "Completed in {} mins {} seconds\nNow check the red lines in the spreadsheet".format(mins, seconds)
+
+window = Tk()
+window.title('Complete')
+window.geometry("350x100")
+window.eval('tk::PlaceWindow . center')
+
+closingMsg = Label(window, font="Calibri 14", text=timeMsg, justify=CENTER)
+closingMsg.pack(pady=5)
+
+button2 = Button(window, font="Calibri 14", text="Ok", bg="blue", fg="white", command=window.destroy)
+button2.pack(pady=5)
+
+window.mainloop()
 
 # Filter
 service = discovery.build('sheets', 'v4', credentials=credentials)
@@ -834,26 +876,5 @@ for file in files:
         os.remove(file)
     except:
         pass
-
-
-finishTime = time.time()
-totalTime = finishTime - beginTime
-
-mins = str(round((totalTime%3600)//60))
-seconds = str(round((totalTime%3600)%60))
-timeMsg = "Completed in {} mins {} seconds\nNow check the red lines in the spreadsheet".format(mins, seconds)
-
-window = Tk()
-window.title('Complete')
-window.geometry("350x100")
-window.eval('tk::PlaceWindow . center')
-
-closingMsg = Label(window, font="Calibri 12", text=timeMsg, justify=CENTER)
-closingMsg.pack(pady=5)
-
-button2 = Button(window, font="Calibri 14", text="Ok", bg="blue", fg="white", command=window.destroy)
-button2.pack(pady=10)
-
-window.mainloop()
 
 webbrowser.open('https://docs.google.com/spreadsheets/d/1ajEtdL9kquS-zB01gf1JR_L6gW0U7_yc8GzcAyLNZp8/edit#gid=0')
