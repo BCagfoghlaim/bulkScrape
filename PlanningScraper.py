@@ -632,6 +632,7 @@ def ABP(iterations):
     sixthdriver.quit()                
     sid_df['File Number'] = sid_df['File Number'].str.replace('Case reference:','')
     sid_df['Received Date'] = sid_df['Received Date'].str.replace('Date lodged:','')
+    sid_df['Received Date'] = sid_df['Received Date'].str[:10]
     sid_df['Development Description'] = sid_df['Development Description'].str.replace('Description:','')
     sid_df = sid_df[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
     sid_df = sid_df.append(single_df, ignore_index=True)
