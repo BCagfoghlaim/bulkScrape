@@ -35,7 +35,7 @@ standardLinks = [
     'http://www.eplanning.ie/KilkennyCC/SearchExact/Description',
     'http://www.eplanning.ie/LaoisCC/SearchExact/Description',
     'http://www.eplanning.ie/LeitrimCC/SearchExact/Description',
-    'http://eplan.limerick.ie/SearchExact/Description',
+    'https://www.eplanning.ie/LimerickCCC/SearchExact/Description',
     'http://www.eplanning.ie/LouthCC/SearchExact/Description',
     'http://www.eplanning.ie/LongfordCC/SearchExact/Description',
     'http://www.eplanning.ie/MayoCC/SearchExact/Description',
