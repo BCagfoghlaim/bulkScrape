@@ -596,6 +596,7 @@ def ABP(iterations):
 
             for list in splitList:
                 list.append('An Bord Pleanala - SID')
+                currentLink = 'https://www.pleanala.ie/en-ie/case/'+str(list[0])
                 list.append(currentLink)
                 list.append('N/A for SID')
             temp_df = pd.DataFrame(splitList, columns = ['File Number', 'Due Date', 'Development Description', 'Received Date', 'EIAR', 'NIS', 'Local Authority Name', 'URL', 'Search Term'])
@@ -614,7 +615,7 @@ def ABP(iterations):
             councilName = 'An Bord Pleanala - SID'
             applicant = sixthdriver.find_element_by_xpath('//*[@id="maincontent"]/div/div/div/div/div/div/div[1]/div/div[6]/div[2]/ul/li[1]/p').text
             description = soup.find("p", {"class":"case-summary"}).text
-            url = sixthdriver.current_url
+            url = 'https://www.pleanala.ie/en-ie/case/'+fileNumber
             searchTerm = 'N/A for SID'
 
             row.append(fileNumber)
@@ -631,6 +632,7 @@ def ABP(iterations):
 
     sixthdriver.quit()                
     sid_df['File Number'] = sid_df['File Number'].str.replace('Case reference:','')
+    sid_df['URL'] = sid_df['URL'].str.replace('Case reference:','')
     sid_df['Received Date'] = sid_df['Received Date'].str.replace('Date lodged:','')
     sid_df['Received Date'] = sid_df['Received Date'].str[:10]
     sid_df['Development Description'] = sid_df['Development Description'].str.replace('Description:','')
@@ -642,9 +644,10 @@ def ABP(iterations):
     sid_df.to_csv('ABP Function.csv', index = False)
     endTime = time.time()
     timeDiff = endTime - startTime
+    print(sid_df)
     print(f'Completed An Bord Pleanala in {timeDiff:.2f} seconds')
-    # return sid_df
-
+    #return sid_df
+    
 #--------------Department Consultations--------------------
 yearAgoString = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%d/%m/%Y')
 yearAgo = time.strptime(yearAgoString, "%d/%m/%Y")
