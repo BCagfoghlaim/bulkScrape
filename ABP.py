@@ -137,7 +137,6 @@ def ABP(iterations):
     sid_df.to_csv('ABP Function.csv', index = False)
     endTime = time.time()
     timeDiff = endTime - startTime
-    print(sid_df)
     print(f'Completed An Bord Pleanala in {timeDiff:.2f} seconds')
     #return sid_df
 
