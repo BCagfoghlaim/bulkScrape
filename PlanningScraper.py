@@ -530,9 +530,13 @@ def southDublin(keywords):
 
 #--------------An Bord Pleanala - SID-----------------------
 
-iterations = ['1','2','3','4']
+cards = ['1','2','3','4']
+iterations = []
+for item in cards:
+    iterations.append(item)
 
-def ABP(iterations):
+
+def ABP(cards, iterations):
     startTime = time.time()
     sixthdriver = webdriver.Chrome(ChromeDriverManager().install())
     sid_df = pd.DataFrame(columns=['File Number', 'Due Date', 'Development Description', 'Received Date', 'Local Authority Name', 'URL', 'Search Term'])
@@ -541,6 +545,8 @@ def ABP(iterations):
     this_year = str(datetime.datetime.now().year)
 
     link = 'https://www.pleanala.ie/en-ie/lists/cases?list=I&year='+this_year
+    # link = 'https://www.pleanala.ie/en-ie/lists/cases?list=I&year=2021'
+
     sixthdriver.get(link)
     try:
         no_cookies = WebDriverWait(sixthdriver, 25).until(
@@ -549,9 +555,39 @@ def ABP(iterations):
         no_cookies.click()
     except:
         pass
-
-    for item in iterations:
+    
+    for item in reversed(iterations):
+        try:
+            print('1st bash')
+            card = WebDriverWait(sixthdriver, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a'))
+                        )
+            print('Card ' +item+ ' found - move on to scrape')
+            break
+        except:
+            print('ABP - Card ' + item + ' not found')
+            cards.pop()
+            print(cards)
+            print(iterations)
+            try:
+                no_results = WebDriverWait(sixthdriver, 25).until(
+                                    EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/p'))
+                                )
+                if no_results.text == "No weekly lists found": 
+                    no_results_df = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name', 'Deadline', 'Applicant Name','Development Address','Development Description', 'URL', 'Search Term'])
+                    no_results_df.to_csv('ABP Function.csv', index = False)
+                    endTime = time.time()
+                    timeDiff = endTime - startTime
+                    print(f'Completed An Bord Pleanala (No Results) in {timeDiff:.2f} seconds')
+                    return None
+                else:
+                    pass
+            except:
+                pass
+            
+    for item in cards:
         sixthdriver.get(link)
+        
         try:
             no_cookies = WebDriverWait(sixthdriver, 10).until(
                                 EC.element_to_be_clickable((By.XPATH, '//*[@id="ccc-reject-settings"]/span'))
@@ -646,7 +682,7 @@ def ABP(iterations):
     timeDiff = endTime - startTime
     print(f'Completed An Bord Pleanala in {timeDiff:.2f} seconds')
     #return sid_df
-    
+
 #--------------Department Consultations--------------------
 yearAgoString = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%d/%m/%Y')
 yearAgo = time.strptime(yearAgoString, "%d/%m/%Y")
@@ -739,7 +775,7 @@ def deptCons():
     deptCons_df = deptCons_df[['File Number','Received Date','Local Authority Name','Deadline','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
 
     deptCons_df.to_csv ('Dept Consultation.csv', index = False)
-
+    
     endTime = time.time()
 
     timeDiff = endTime - startTime
@@ -752,7 +788,7 @@ t2 = Thread(target=KildareScript,args=(keywords,0))
 t3 = Thread(target=dublin,args=(keywords,))
 t4 = Thread(target=wexford,args=(keywords,))
 t5 = Thread(target=southDublin,args=(keywords,))
-t6 = Thread(target=ABP,args=(iterations,))
+t6 = Thread(target=ABP,args=(cards,iterations,))
 t7 = Thread(target=deptCons)
 
 t3.start()
