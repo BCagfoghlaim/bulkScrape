@@ -23,9 +23,13 @@ from webdriver_manager.chrome import ChromeDriverManager
 #PATH = 'C:\Program Files (x86)\chromedriver.exe'
 #driver = webdriver.Chrome(PATH)
 
-iterations = ['1','2','3','4']
+cards = ['1','2','3','4']
+iterations = []
+for item in cards:
+    iterations.append(item)
 
-def ABP(iterations):
+
+def ABP(cards, iterations):
     startTime = time.time()
     sixthdriver = webdriver.Chrome(ChromeDriverManager().install())
     sid_df = pd.DataFrame(columns=['File Number', 'Due Date', 'Development Description', 'Received Date', 'Local Authority Name', 'URL', 'Search Term'])
@@ -34,6 +38,7 @@ def ABP(iterations):
     this_year = str(datetime.datetime.now().year)
 
     link = 'https://www.pleanala.ie/en-ie/lists/cases?list=I&year='+this_year
+   
     sixthdriver.get(link)
     try:
         no_cookies = WebDriverWait(sixthdriver, 25).until(
@@ -42,9 +47,45 @@ def ABP(iterations):
         no_cookies.click()
     except:
         pass
-
-    for item in iterations:
+    
+    for item in reversed(iterations):
+        try:
+            # print('1st bash')
+            card = WebDriverWait(sixthdriver, 10).until(
+                            EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a'))
+                        )
+            print('Card ' +item+ ' found - move on to scrape')
+            break
+        except:
+            print('ABP - Card ' + item + ' not found')
+            cards.pop()
+            print(cards)
+            print(iterations)
+            try:
+                no_results = WebDriverWait(sixthdriver, 25).until(
+                                    EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/p'))
+                                )
+                if no_results.text == "No weekly lists found": 
+                    no_results_df = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name', 'Deadline', 'Applicant Name','Development Address','Development Description', 'URL', 'Search Term'])
+                    no_results_df.to_csv('ABP Function.csv', index = False)
+                    endTime = time.time()
+                    timeDiff = endTime - startTime
+                    print(f'Completed An Bord Pleanala (No Results) in {timeDiff:.2f} seconds')
+                    return None
+                else:
+                    pass
+            except:
+                print('Not Enough Results')
+                notEnoughResults_df = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name', 'Deadline', 'Applicant Name','Development Address','Development Description', 'URL', 'Search Term'])
+                notEnoughResults_df.to_csv('ABP Function.csv', index = False)
+                endTime = time.time()
+                timeDiff = endTime - startTime
+                print(f'Completed An Bord Pleanala (ERROR: Not Enough Results) in {timeDiff:.2f} seconds')
+                return None
+            
+    for item in cards:
         sixthdriver.get(link)
+        
         try:
             no_cookies = WebDriverWait(sixthdriver, 10).until(
                                 EC.element_to_be_clickable((By.XPATH, '//*[@id="ccc-reject-settings"]/span'))
@@ -140,4 +181,4 @@ def ABP(iterations):
     print(f'Completed An Bord Pleanala in {timeDiff:.2f} seconds')
     #return sid_df
 
-ABP(iterations)
+ABP(cards, iterations)
