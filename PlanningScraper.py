@@ -558,17 +558,15 @@ def ABP(cards, iterations):
     
     for item in reversed(iterations):
         try:
-            print('1st bash')
             card = WebDriverWait(sixthdriver, 10).until(
                             EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a'))
                         )
-            print('Card ' +item+ ' found - move on to scrape')
+            # print('Card ' +item+ ' found - move on to scrape')
             break
         except:
             print('ABP - Card ' + item + ' not found')
             cards.pop()
-            print(cards)
-            print(iterations)
+            
             try:
                 no_results = WebDriverWait(sixthdriver, 25).until(
                                     EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/p'))
@@ -583,7 +581,12 @@ def ABP(cards, iterations):
                 else:
                     pass
             except:
-                pass
+                notEnoughResults_df = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name', 'Deadline', 'Applicant Name','Development Address','Development Description', 'URL', 'Search Term'])
+                notEnoughResults_df.to_csv('ABP Function.csv', index = False)
+                endTime = time.time()
+                timeDiff = endTime - startTime
+                print(f'Completed An Bord Pleanala (ERROR: Not Enough Results) in {timeDiff:.2f} seconds')
+                return None
             
     for item in cards:
         sixthdriver.get(link)
