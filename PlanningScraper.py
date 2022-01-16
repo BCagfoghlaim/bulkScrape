@@ -345,6 +345,7 @@ def dublin(keywords):
     thirddriver.quit()
     data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'])
     data_frame = data_frame[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
+    data_frame['URL'] = data_frame['URL'].str.replace(' ','%20')
     dublin_df = data_frame
     dublin_df.to_csv ('Dublin Function.csv', index = False)
     endTime = time.time()
@@ -558,15 +559,17 @@ def ABP(cards, iterations):
     
     for item in reversed(iterations):
         try:
+            # print('1st bash')
             card = WebDriverWait(sixthdriver, 10).until(
                             EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a'))
                         )
-            # print('Card ' +item+ ' found - move on to scrape')
+            print('Card ' +item+ ' found - move on to scrape')
             break
         except:
             print('ABP - Card ' + item + ' not found')
             cards.pop()
-            
+            print(cards)
+            print(iterations)
             try:
                 no_results = WebDriverWait(sixthdriver, 25).until(
                                     EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/p'))
@@ -581,6 +584,7 @@ def ABP(cards, iterations):
                 else:
                     pass
             except:
+                print('Not Enough Results')
                 notEnoughResults_df = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name', 'Deadline', 'Applicant Name','Development Address','Development Description', 'URL', 'Search Term'])
                 notEnoughResults_df.to_csv('ABP Function.csv', index = False)
                 endTime = time.time()
