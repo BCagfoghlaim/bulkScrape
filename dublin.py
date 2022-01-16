@@ -132,6 +132,7 @@ for council in councils:
 #CHOP UP DATAFRAME
 data_frame = data_frame.drop_duplicates()
 data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'])
+data_frame['URL'] = data_frame['URL'].str.replace(' ','%20')
 sorted_df = data_frame.sort_values(['Received Date', 'Local Authority Name'], ascending=[False, True])
 reorderDf = sorted_df[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
 reorderDf.to_csv ('dublin.csv', index = False)
