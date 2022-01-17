@@ -855,6 +855,22 @@ new_df = new_df.drop_duplicates(subset=['File Number','Received Date','Local Aut
 new_df = new_df.sort_values(['Deadline', 'Local Authority Name'], ascending=[False, True])
 new_df['Comments'] = new_df['Comments'].fillna('')
 new_df['Show Public'] = new_df['Show Public'].fillna('-')
+new_df['Tweet Sent?'] = new_df['Tweet Sent?'].fillna('-')
+
+new_df['Deadline']=pd.to_datetime(new_df['Deadline'])
+new_df['Received Date']=pd.to_datetime(new_df['Received Date'])
+new_df['Deadline']=new_df['Deadline'].dt.strftime('%d %b %Y')
+new_df['Received Date']=new_df['Received Date'].dt.strftime('%d %b %Y')
+
+numberOfRows = len(new_df)-3
+print(numberOfRows)
+
+for row in range(0,numberOfRows):
+    new_df['Draft Tweet'].iloc[row] = str('=if(and(K'+str(row+2)+'="Yes",VALUE(today()-D'+str(row+2)+')<=3),"📢 New - Public Submissions Needed 📢 "&char(10)&J'+str(row+2)+'&" proposed for "&if(F'+str(row+2)+'="N/A for DECC","DECC",F'+str(row+2)+')&"Deadline for submissions: "&D'+str(row+2)+'&if(F'+str(row+2)+'="N/A for DECC","",char(10)&"Ref No: "&A'+str(row+2)+')&"Link: "&H'+str(row+2)+'&"How to submit: https://notherenotanywhere.com/new-planning-applications/","No tweet")')    
+
+new_df['Deadline'] = new_df['Deadline'].str.replace('Sep','Sept')
+new_df['Received Date'] = new_df['Received Date'].str.replace('Sep','Sept')
+
 new_df = new_df.reset_index(drop=True)
 new_df.to_csv ('Planning Applications.csv', index = False)
 
@@ -891,9 +907,36 @@ button2.pack(pady=5)
 
 window.mainloop()
 
-# Filter
-service = discovery.build('sheets', 'v4', credentials=credentials)
 
+service = discovery.build('sheets', 'v4', credentials=credentials)
+#Remove ticks
+request_body = {
+    "requests": [
+        {
+            "findReplace": {
+                "find": "'=",
+                "searchByRegex": True,
+                "range": {
+                    "sheetId": 0,
+                    'startRowIndex': 0,
+                    'startColumnIndex': 12,
+                    'endColumnIndex': 13 
+
+                },
+                "replacement": "=",
+                "matchEntireCell": False,
+                "includeFormulas": True
+            }
+        }
+    ]
+}
+service.spreadsheets().batchUpdate(
+    spreadsheetId=spreadsheet_key,
+    body=request_body
+).execute()
+
+
+# Filter
 request_body = {
     'requests': [
         {
@@ -903,7 +946,7 @@ request_body = {
                         'sheetId': 0,
                         'startRowIndex': 0,
                         'startColumnIndex': 0 ,
-                        'endColumnIndex': 11 
+                        'endColumnIndex': 13 
                     }
                 }
             }
