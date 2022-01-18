@@ -452,7 +452,8 @@ def southDublin(keywords):
 
     data_frame = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term'])
     tempdf = pd.DataFrame(columns=['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description','URL', 'Search Term'])  
-
+    
+    tempdf.to_csv ('South Dublin Function.csv', index = False)
     for keyword in keywords:
         link = 'http://www.sdublincoco.ie/Planning/Applications?p=1&prop='+keyword
         fifthdriver.get(link)
@@ -859,14 +860,20 @@ new_df['Tweet Sent?'] = new_df['Tweet Sent?'].fillna('-')
 
 new_df['Deadline']=pd.to_datetime(new_df['Deadline'])
 new_df['Received Date']=pd.to_datetime(new_df['Received Date'])
-new_df['Deadline']=new_df['Deadline'].dt.strftime('%d %b %Y')
-new_df['Received Date']=new_df['Received Date'].dt.strftime('%d %b %Y')
+new_df['test'] = (pd.to_datetime('today').normalize() - pd.to_datetime(new_df['Deadline'])).dt.days
+
+new_df.loc[(new_df['test'] > 50), 'Draft Tweet'] = 'No Tweet'
 
 numberOfRows = len(new_df)-3
-print(numberOfRows)
 
 for row in range(0,numberOfRows):
-    new_df['Draft Tweet'].iloc[row] = str('=if(and(K'+str(row+2)+'="Yes",VALUE(today()-D'+str(row+2)+')<=3),"📢 New - Public Submissions Needed 📢 "&char(10)&J'+str(row+2)+'&" proposed for "&if(F'+str(row+2)+'="N/A for DECC","DECC",F'+str(row+2)+')&"Deadline for submissions: "&D'+str(row+2)+'&if(F'+str(row+2)+'="N/A for DECC","",char(10)&"Ref No: "&A'+str(row+2)+')&"Link: "&H'+str(row+2)+'&"How to submit: https://notherenotanywhere.com/new-planning-applications/","No tweet")')    
+    if new_df['test'].iloc[row] <= 50:
+        new_df['Draft Tweet'].iloc[row] = str('=if(and(K'+str(row+2)+'="Yes",VALUE(today()-D'+str(row+2)+')<=3),"📢 New - Public Submissions Needed 📢 "&char(10)&J'+str(row+2)+'&" proposed for "&if(F'+str(row+2)+'="N/A for DECC","DECC",F'+str(row+2)+')&char(10)&"Deadline for submissions: "&D'+str(row+2)+'&char(10)&if(F'+str(row+2)+'="N/A for DECC","",char(10)&"Ref No: "&A'+str(row+2)+')&char(10)&"Link: "&H'+str(row+2)+'&char(10)&"How to submit: https://notherenotanywhere.com/new-planning-applications/&char(10)&char(10)&#NHNAsubmission","No tweet")')
+
+new_df = new_df.drop('test', 1) 
+
+new_df['Deadline']=new_df['Deadline'].dt.strftime('%d %b %Y')
+new_df['Received Date']=new_df['Received Date'].dt.strftime('%d %b %Y')
 
 new_df['Deadline'] = new_df['Deadline'].str.replace('Sep','Sept')
 new_df['Received Date'] = new_df['Received Date'].str.replace('Sep','Sept')
