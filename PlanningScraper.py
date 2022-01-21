@@ -254,103 +254,304 @@ def KildareScript(keywords,attempts):
 
 #---------------------------- Dublin --------------------------------------------
 
-def dublin(keywords):
-    startTime = time.time()
-    councils = ['fingal', 'dunlaoghaire', 'dublincity']
-    thirddriver =  webdriver.Chrome(ChromeDriverManager().install())
+def dublincity(keywords):
+    dubCitystartTime = time.time()
+    # councils = ['dublincity']
+    council = 'dublincity'
+    thirdAdriver =  webdriver.Chrome(ChromeDriverManager().install())
     yearAgo = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%Y-%m-%d')
     today = datetime.datetime.now().strftime('%Y-%m-%d')
     data_frame = pd.DataFrame(columns=['Applicant Name', 'DECISION DATE', 'FINAL GRANT DATE', 'Development Address', 'File Number', 'Development Description',	'Received Date', 'Local Authority Name', 'URL', 'Search Term'])
-    for council in councils:
-        for keyword in keywords:
-            link = 'https://planning.agileapplications.ie/'+council+'/search-applications/results?criteria=%7B%22proposal%22:%22'+keyword+'%22,%22openApplications%22:%22false%22,%22registrationDateFrom%22:%22'+yearAgo+'%22,%22registrationDateTo%22:%22'+today+'%22%7D'
-        
-            thirddriver.get(link)
+    # for council in councils:
+    for keyword in keywords:
+        link = 'https://planning.agileapplications.ie/'+council+'/search-applications/results?criteria=%7B%22proposal%22:%22'+keyword+'%22,%22openApplications%22:%22false%22,%22registrationDateFrom%22:%22'+yearAgo+'%22,%22registrationDateTo%22:%22'+today+'%22%7D'
+    
+        thirdAdriver.get(link)
 
+        try:
+            cookies = WebDriverWait(thirdAdriver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, '#header > sas-cookie-consent > section > section > div.alert.alert-info > button'))
+            )
+            cookies.click()
+        except Exception:
+            pass
+
+        try:
+            WebDriverWait(thirdAdriver, 5).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="no_results"]'))
+            )
+            
+        except:
+
+            thirdAdriver.set_window_size(480, 600)
+            
             try:
-                cookies = WebDriverWait(thirddriver, 5).until(
-                    EC.presence_of_element_located((By.CSS_SELECTOR, '#header > sas-cookie-consent > section > section > div.alert.alert-info > button'))
-                )
-                cookies.click()
+                
+                seeMore = WebDriverWait(thirdAdriver, 8).until(
+                        EC.element_to_be_clickable((By.XPATH, '//*[@id="ui-view"]/search-applications-results/section/sas-table/div[2]/div[4]/div/div/a/em'))
+                    )
+                i=0
+                while seeMore.is_displayed() == True:
+                    seeMore.click()
+                    time.sleep(2)
+
+                print('Clicked'+i+'times')
+                i= i + 1
             except Exception:
                 pass
+                
+            html = thirdAdriver.page_source
+            soup = BeautifulSoup(html, "lxml")
+
+            tbl = soup.find("tbody")
+            rows = soup.findAll("tr")
+
+            list = []
+            for row in rows:
+                cells = row.findAll("td")   
+                for cell in cells:
+                    data = cell.get_text(strip=True)
+                    list.append(data)
+
+            del list[:8]
+            startPosition = int((len(list)-8)/2)
+            endPosition = int(startPosition + 8)
 
             try:
-                WebDriverWait(thirddriver, 5).until(
-                EC.presence_of_element_located((By.XPATH, '//*[@id="no_results"]'))
-                )
-                
-            except:
+                del list[startPosition:endPosition]
+            except Exception:
+                pass
+            splitList = [list[i:i + 7] for i in range(0, len(list), 7)]
+            for section in splitList:
+                if 'dublincity' in link:
+                    section.append('Dublin City Council')
+                    section.append(link)
+                    section.append(keyword)
+                # elif 'fingal' in link:
+                #     section.append('Fingal Co. Co.')
+                #     section.append(link)
+                #     section.append(keyword)
+                # elif 'dunlaoghaire' in link:
+                #     section.append('Dun Laoghaire Co. Co.')
+                #     section.append(link)
+                #     section.append(keyword)
+                else:
+                    section.append(link)
 
-                thirddriver.set_window_size(480, 600)
-                
-                try:
-                    
-                    seeMore = WebDriverWait(thirddriver, 8).until(
-                            EC.element_to_be_clickable((By.XPATH, '//*[@id="ui-view"]/search-applications-results/section/sas-table/div[2]/div[4]/div/div/a/em'))
-                        )
-                    i=0
-                    while seeMore.is_displayed() == True:
-                        seeMore.click()
-                        time.sleep(2)
-
-                    print('Clicked'+i+'times')
-                    i= i + 1
-                except Exception:
-                    pass
-                    
-                html = thirddriver.page_source
-                soup = BeautifulSoup(html, "lxml")
-
-                tbl = soup.find("tbody")
-                rows = soup.findAll("tr")
-
-                list = []
-                for row in rows:
-                    cells = row.findAll("td")   
-                    for cell in cells:
-                        data = cell.get_text(strip=True)
-                        list.append(data)
-
-                del list[:8]
-                startPosition = int((len(list)-8)/2)
-                endPosition = int(startPosition + 8)
-
-                try:
-                    del list[startPosition:endPosition]
-                except Exception:
-                    pass
-                splitList = [list[i:i + 7] for i in range(0, len(list), 7)]
-                for section in splitList:
-                    if 'fingal' in link:
-                        section.append('Fingal Co. Co.')
-                        section.append(link)
-                        section.append(keyword)
-                    elif 'dunlaoghaire' in link:
-                        section.append('Dun Laoghaire Co. Co.')
-                        section.append(link)
-                        section.append(keyword)
-                    elif 'dublincity' in link:
-                        section.append('Dublin City Council')
-                        section.append(link)
-                        section.append(keyword)
-                    else:
-                        section.append(link)
-
-                tempdf = pd.DataFrame(splitList,columns=['File Number',	'Development Description',	'Development Address',	'Received Date', 'DECISION DATE', 'FINAL GRANT DATE', 'Applicant Name',	'Local Authority Name', 'URL', 'Search Term'])
-                df = tempdf.drop_duplicates()
-                cleanDf = df.drop(columns =['DECISION DATE', 'FINAL GRANT DATE'])
-                data_frame = data_frame.append(cleanDf, ignore_index=True)
+            tempdf = pd.DataFrame(splitList,columns=['File Number',	'Development Description',	'Development Address',	'Received Date', 'DECISION DATE', 'FINAL GRANT DATE', 'Applicant Name',	'Local Authority Name', 'URL', 'Search Term'])
+            df = tempdf.drop_duplicates()
+            cleanDf = df.drop(columns =['DECISION DATE', 'FINAL GRANT DATE'])
+            data_frame = data_frame.append(cleanDf, ignore_index=True)
     
-    thirddriver.quit()
+    thirdAdriver.quit()
     data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'])
     data_frame = data_frame[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
     data_frame['URL'] = data_frame['URL'].str.replace(' ','%20')
-    dublin_df = data_frame
-    dublin_df.to_csv ('Dublin Function.csv', index = False)
-    endTime = time.time()
-    timeDiff = endTime - startTime
-    print(f'Completed Dublin in {timeDiff:.2f} seconds')
+    dublinCity_df = data_frame
+    dublinCity_df.to_csv ('DublinCity Function.csv', index = False)
+    dubCityendTime = time.time()
+    timeDiff = dubCityendTime - dubCitystartTime
+    print(f'Completed Dublin-City in {timeDiff:.2f} seconds')
+    # return dublinCity_df
+
+def fingal(keywords):
+    fingalstartTime = time.time()
+    # councils = ['fingal']
+    council = 'fingal'
+    thirdBdriver =  webdriver.Chrome(ChromeDriverManager().install())
+    yearAgo = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%Y-%m-%d')
+    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    data_frame = pd.DataFrame(columns=['Applicant Name', 'DECISION DATE', 'FINAL GRANT DATE', 'Development Address', 'File Number', 'Development Description',	'Received Date', 'Local Authority Name', 'URL', 'Search Term'])
+    # for council in councils:
+    for keyword in keywords:
+        link = 'https://planning.agileapplications.ie/'+council+'/search-applications/results?criteria=%7B%22proposal%22:%22'+keyword+'%22,%22openApplications%22:%22false%22,%22registrationDateFrom%22:%22'+yearAgo+'%22,%22registrationDateTo%22:%22'+today+'%22%7D'
+    
+        thirdBdriver.get(link)
+
+        try:
+            cookies = WebDriverWait(thirdBdriver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, '#header > sas-cookie-consent > section > section > div.alert.alert-info > button'))
+            )
+            cookies.click()
+        except Exception:
+            pass
+
+        try:
+            WebDriverWait(thirdBdriver, 5).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="no_results"]'))
+            )
+            
+        except:
+
+            thirdBdriver.set_window_size(480, 600)
+            
+            try:
+                
+                seeMore = WebDriverWait(thirdBdriver, 8).until(
+                        EC.element_to_be_clickable((By.XPATH, '//*[@id="ui-view"]/search-applications-results/section/sas-table/div[2]/div[4]/div/div/a/em'))
+                    )
+                i=0
+                while seeMore.is_displayed() == True:
+                    seeMore.click()
+                    time.sleep(2)
+
+                print('Clicked'+i+'times')
+                i= i + 1
+            except Exception:
+                pass
+                
+            html = thirdBdriver.page_source
+            soup = BeautifulSoup(html, "lxml")
+
+            tbl = soup.find("tbody")
+            rows = soup.findAll("tr")
+
+            list = []
+            for row in rows:
+                cells = row.findAll("td")   
+                for cell in cells:
+                    data = cell.get_text(strip=True)
+                    list.append(data)
+
+            del list[:8]
+            startPosition = int((len(list)-8)/2)
+            endPosition = int(startPosition + 8)
+
+            try:
+                del list[startPosition:endPosition]
+            except Exception:
+                pass
+            splitList = [list[i:i + 7] for i in range(0, len(list), 7)]
+            for section in splitList:
+                if 'fingal' in link:
+                    section.append('Fingal Co. Co.')
+                    section.append(link)
+                    section.append(keyword)
+                # elif 'dunlaoghaire' in link:
+                #     section.append('Dun Laoghaire Co. Co.')
+                #     section.append(link)
+                #     section.append(keyword)
+                # elif 'dublincity' in link:
+                #     section.append('Dublin City Council')
+                #     section.append(link)
+                #     section.append(keyword)
+                else:
+                    section.append(link)
+
+            tempdf = pd.DataFrame(splitList,columns=['File Number',	'Development Description',	'Development Address',	'Received Date', 'DECISION DATE', 'FINAL GRANT DATE', 'Applicant Name',	'Local Authority Name', 'URL', 'Search Term'])
+            df = tempdf.drop_duplicates()
+            cleanDf = df.drop(columns =['DECISION DATE', 'FINAL GRANT DATE'])
+            data_frame = data_frame.append(cleanDf, ignore_index=True)
+    
+    thirdBdriver.quit()
+    data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'])
+    data_frame = data_frame[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
+    data_frame['URL'] = data_frame['URL'].str.replace(' ','%20')
+    fingal_df = data_frame
+    fingal_df.to_csv ('Fingal Function.csv', index = False)
+    fingalendTime = time.time()
+    timeDiff = fingalendTime - fingalstartTime
+    print(f'Completed fingal in {timeDiff:.2f} seconds')
+    # return dublin_df
+
+def dunlaoghaire(keywords):
+    dunlaoghairestartTime = time.time()
+    # councils = ['dunlaoghaire']
+    council = 'dunlaoghaire'
+    thirdCdriver =  webdriver.Chrome(ChromeDriverManager().install())
+    yearAgo = (datetime.datetime.now() - datetime.timedelta(days=365)).strftime('%Y-%m-%d')
+    today = datetime.datetime.now().strftime('%Y-%m-%d')
+    data_frame = pd.DataFrame(columns=['Applicant Name', 'DECISION DATE', 'FINAL GRANT DATE', 'Development Address', 'File Number', 'Development Description',	'Received Date', 'Local Authority Name', 'URL', 'Search Term'])
+    # for council in councils:
+    for keyword in keywords:
+        link = 'https://planning.agileapplications.ie/'+council+'/search-applications/results?criteria=%7B%22proposal%22:%22'+keyword+'%22,%22openApplications%22:%22false%22,%22registrationDateFrom%22:%22'+yearAgo+'%22,%22registrationDateTo%22:%22'+today+'%22%7D'
+    
+        thirdCdriver.get(link)
+
+        try:
+            cookies = WebDriverWait(thirdCdriver, 5).until(
+                EC.presence_of_element_located((By.CSS_SELECTOR, '#header > sas-cookie-consent > section > section > div.alert.alert-info > button'))
+            )
+            cookies.click()
+        except Exception:
+            pass
+
+        try:
+            WebDriverWait(thirdCdriver, 5).until(
+            EC.presence_of_element_located((By.XPATH, '//*[@id="no_results"]'))
+            )
+            
+        except:
+
+            thirdCdriver.set_window_size(480, 600)
+            
+            try:
+                
+                seeMore = WebDriverWait(thirdCdriver, 8).until(
+                        EC.element_to_be_clickable((By.XPATH, '//*[@id="ui-view"]/search-applications-results/section/sas-table/div[2]/div[4]/div/div/a/em'))
+                    )
+                i=0
+                while seeMore.is_displayed() == True:
+                    seeMore.click()
+                    time.sleep(2)
+
+                print('Clicked'+i+'times')
+                i= i + 1
+            except Exception:
+                pass
+                
+            html = thirdCdriver.page_source
+            soup = BeautifulSoup(html, "lxml")
+
+            tbl = soup.find("tbody")
+            rows = soup.findAll("tr")
+
+            list = []
+            for row in rows:
+                cells = row.findAll("td")   
+                for cell in cells:
+                    data = cell.get_text(strip=True)
+                    list.append(data)
+
+            del list[:8]
+            startPosition = int((len(list)-8)/2)
+            endPosition = int(startPosition + 8)
+
+            try:
+                del list[startPosition:endPosition]
+            except Exception:
+                pass
+            splitList = [list[i:i + 7] for i in range(0, len(list), 7)]
+            for section in splitList:
+                if 'dunlaoghaire' in link:
+                    section.append('Dun Laoghaire Co. Co.')
+                    section.append(link)
+                    section.append(keyword)
+                # elif 'fingal' in link:
+                #     section.append('Fingal Co. Co.')
+                #     section.append(link)
+                #     section.append(keyword)
+                # elif 'dublincity' in link:
+                #     section.append('Dublin City Council')
+                #     section.append(link)
+                #     section.append(keyword)
+                else:
+                    section.append(link)
+
+            tempdf = pd.DataFrame(splitList,columns=['File Number',	'Development Description',	'Development Address',	'Received Date', 'DECISION DATE', 'FINAL GRANT DATE', 'Applicant Name',	'Local Authority Name', 'URL', 'Search Term'])
+            df = tempdf.drop_duplicates()
+            cleanDf = df.drop(columns =['DECISION DATE', 'FINAL GRANT DATE'])
+            data_frame = data_frame.append(cleanDf, ignore_index=True)
+    
+    thirdCdriver.quit()
+    data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'])
+    data_frame = data_frame[['File Number','Received Date','Local Authority Name','Applicant Name','Development Address','Development Description', 'URL', 'Search Term']]
+    data_frame['URL'] = data_frame['URL'].str.replace(' ','%20')
+    dunlaoghaire_df = data_frame
+    dunlaoghaire_df.to_csv ('Dunlaoghaire Function.csv', index = False)
+    dunlaoghaireendTime = time.time()
+    timeDiff = dunlaoghaireendTime - dunlaoghairestartTime
+    print(f'Completed dunlaoghaire in {timeDiff:.2f} seconds')
     # return dublin_df
 
 #------------------------------------Wexford--------------------------------------------------
@@ -793,13 +994,17 @@ def deptCons():
 #----------------------Threads-----------------------------
 t1 = Thread(target=bulk,args=(keywords,standardLinks,))
 t2 = Thread(target=KildareScript,args=(keywords,0))
-t3 = Thread(target=dublin,args=(keywords,))
+t3A = Thread(target=dublincity,args=(keywords,))
+t3B = Thread(target=fingal,args=(keywords,))
+t3C = Thread(target=dunlaoghaire,args=(keywords,))
 t4 = Thread(target=wexford,args=(keywords,))
 t5 = Thread(target=southDublin,args=(keywords,))
 t6 = Thread(target=ABP,args=(cards,iterations,))
 t7 = Thread(target=deptCons)
 
-t3.start()
+t3A.start()
+t3B.start()
+t3C.start()
 t1.start()
 t4.start()
 t6.start()
@@ -813,19 +1018,23 @@ t2.join()
 t6.join()
 t4.join()
 t1.join()
-t3.join()
+t3A.join()
+t3B.join()
+t3C.join()
 
 #----------------------COMBO-------------------------------
 
 bulk_df = pd.read_csv('Bulk Function.csv')
 kildare_df = pd.read_csv('Kildare Function.csv')
-dublin_df = pd.read_csv('Dublin Function.csv')
+dubCity_df = pd.read_csv('DublinCity Function.csv')
+fingal_df = pd.read_csv('Fingal Function.csv')
+dunlaoghaire_df = pd.read_csv('Dunlaoghaire Function.csv')
 wexford_df = pd.read_csv('Wexford Function.csv')
 southDublin_df = pd.read_csv('South Dublin Function.csv')
 sid_df = pd.read_csv('ABP Function.csv')
 deptCons_df = pd.read_csv('Dept Consultation.csv')
 
-initial_frames = [bulk_df, kildare_df, dublin_df, wexford_df, southDublin_df]
+initial_frames = [bulk_df, kildare_df, dubCity_df, fingal_df, dunlaoghaire_df, wexford_df, southDublin_df]
 general_deadline = pd.concat(initial_frames)
 general_deadline['Received Date'] = pd.to_datetime(general_deadline['Received Date'])
 general_deadline['Deadline'] = general_deadline['Received Date'] + pd.Timedelta(days=32)
@@ -842,12 +1051,14 @@ existing_df = pd.read_csv(sheet_url)
 
 try:
     existing_df['Received Date'] = pd.to_datetime(existing_df['Received Date'], format = '%d/%m/%Y')
+    existing_df['Deadline'] = pd.to_datetime(existing_df['Deadline'], format = '%d/%m/%Y')
 except Exception:
     pass
 
 new_df = pd.concat([combo_df, existing_df])
 new_df['File Number'] = new_df['File Number'].astype(str)
 new_df['Received Date'] = new_df['Received Date'].astype(str)
+# new_df['Deadline'] = new_df['Deadline'].astype(str)
 
 new_df['Received Date'] = pd.to_datetime(new_df['Received Date']).dt.date
 new_df['Deadline'] = pd.to_datetime(new_df['Deadline']).dt.date
@@ -916,7 +1127,7 @@ window.mainloop()
 
 
 service = discovery.build('sheets', 'v4', credentials=credentials)
-#Remove ticks
+#Remove ticks from tweet
 request_body = {
     "requests": [
         {
@@ -942,6 +1153,31 @@ service.spreadsheets().batchUpdate(
     body=request_body
 ).execute()
 
+#Remove ticks from deadline date
+request_body = {
+    "requests": [
+        {
+            "findReplace": {
+                "find": "'",
+                "searchByRegex": True,
+                "range": {
+                    "sheetId": 0,
+                    'startRowIndex': 0,
+                    'startColumnIndex': 3,
+                    'endColumnIndex': 4 
+
+                },
+                "replacement": "",
+                "matchEntireCell": False,
+                "includeFormulas": True
+            }
+        }
+    ]
+}
+service.spreadsheets().batchUpdate(
+    spreadsheetId=spreadsheet_key,
+    body=request_body
+).execute()
 
 # Filter
 request_body = {
@@ -966,7 +1202,7 @@ service.spreadsheets().batchUpdate(
     body=request_body
 ).execute()
 
-files = ['Kildare Function.csv','South Dublin Function.csv','Dublin Function.csv','Bulk Function.csv','Wexford Function.csv','ABP Function.csv','Dept Consultation.csv']
+files = ['Kildare Function.csv','South Dublin Function.csv','DublinCity Function.csv','Dunlaoghaire Function.csv','Fingal Function.csv','Bulk Function.csv','Wexford Function.csv','ABP Function.csv','Dept Consultation.csv']
 for file in files:
     try:
         os.remove(file)
