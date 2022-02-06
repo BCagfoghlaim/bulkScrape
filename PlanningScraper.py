@@ -724,6 +724,7 @@ def southDublin(keywords):
     fifthdriver.quit()
     data_frame['Received Date'] = pd.to_datetime(data_frame['Received Date'], format='%d/%m/%Y')
     data_frame = data_frame[(data_frame['Received Date'] >= yearAgo)]
+    data_frame['URL'] = data_frame['URL'].str.replace(' ','%20')
     southDublin_df = data_frame
     southDublin_df.to_csv ('South Dublin Function.csv', index = False)
     endTime = time.time()
@@ -806,10 +807,13 @@ def ABP(cards, iterations):
             pass
        
         # sixthdriver.find_element_by_xpath('//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a').click()
-        card = WebDriverWait(sixthdriver, 10).until(
-                            EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a'))
-                        )
-        card.click()
+        # card = WebDriverWait(sixthdriver, 10).until(
+        #                     EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a'))
+        #                 )
+        # card.click()
+
+        card = sixthdriver.find_element_by_xpath('//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a')
+        sixthdriver.execute_script("arguments[0].click();", card)
 
         html = sixthdriver.page_source
         soup = BeautifulSoup(html, "lxml")
@@ -1081,7 +1085,8 @@ for row in range(0,numberOfRows):
     if new_df['test'].iloc[row] <= 50:
         new_df['Draft Tweet'].iloc[row] = str('=if(and(K'+str(row+2)+'="Yes",VALUE(today()-D'+str(row+2)+')<=3),"📢 New - Public Submissions Needed 📢 "&char(10)&J'+str(row+2)+'&" proposed for "&if(F'+str(row+2)+'="N/A for DECC","DECC",F'+str(row+2)+')&char(10)&"Deadline for submissions: "&text(D'+str(row+2)+',"DD mmm")&char(10)&if(F'+str(row+2)+'="N/A for DECC","",char(10)&"Ref No: "&A'+str(row+2)+')&char(10)&"Link: "&H'+str(row+2)+'&char(10)&"How to submit: https://notherenotanywhere.com/new-planning-applications/"&char(10)&char(10)&"#NHNAsubmission","No tweet")')
 
-new_df = new_df.drop('test', 1) 
+#new_df = new_df.drop('test', 1) 
+new_df = new_df.drop(columns='test')  
 
 new_df['Deadline']=new_df['Deadline'].dt.strftime('%d %b %Y')
 new_df['Received Date']=new_df['Received Date'].dt.strftime('%d %b %Y')
