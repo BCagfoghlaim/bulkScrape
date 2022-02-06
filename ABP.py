@@ -95,10 +95,13 @@ def ABP(cards, iterations):
             pass
        
         # sixthdriver.find_element_by_xpath('//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a').click()
-        card = WebDriverWait(sixthdriver, 10).until(
-                            EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a'))
-                        )
-        card.click()
+        # card = WebDriverWait(sixthdriver, 10).until(
+        #                     EC.element_to_be_clickable((By.XPATH, '//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a'))
+        #                 )
+        # card.click()
+
+        card = sixthdriver.find_element_by_xpath('//*[@id="maincontent"]/div/div/div/div/div/div/div[2]/div/div['+item+']/a')
+        sixthdriver.execute_script("arguments[0].click();", card)
 
         html = sixthdriver.page_source
         soup = BeautifulSoup(html, "lxml")
