@@ -25,6 +25,12 @@ from selenium import webdriver
 
 beginTime = time.time()
 
+variables[ 'Error' ] = 'Test Error'
+
+sheet_url = 'https://docs.google.com/spreadsheets/d/1ajEtdL9kquS-zB01gf1JR_L6gW0U7_yc8GzcAyLNZp8/export?format=csv&gid=0'
+existing_df = pd.read_csv(sheet_url)
+existing_df.to_csv ('Existing Applications.csv', index = False)
+
 options = webdriver.ChromeOptions()
 options.add_argument('--headless')
 options.add_argument('--no-sandbox')
@@ -117,7 +123,10 @@ def bulk(keywords,standardLinks):
     print(f'Completed Bulk in {timeDiff:.2f} seconds')
     # return bulk_df
 
-bulk(keywords,standardLinks)
+try:
+    bulk(keywords,standardLinks)
+except:
+    variables[ 'Error' ] = 'Error in Bulk Function'
 
 #--------------------------- Kildare -------------------------
 def KildareScript(keywords,attempts):
@@ -205,7 +214,10 @@ def KildareScript(keywords,attempts):
     print(f'Completed Kildare in {timeDiff:.2f} seconds')
     # return kildare_df
     
-KildareScript(keywords,0)
+try:
+    KildareScript(keywords,0)
+except:
+    variables[ 'Error' ] = 'Error in Kildare Function'
 
 #-------------------------- Dublin City/Fingal/Dun Laoghaire -----------
 
@@ -511,9 +523,22 @@ def dunlaoghaire(keywords):
     timeDiff = dunlaoghaireendTime - dunlaoghairestartTime
     print(f'Completed dunlaoghaire in {timeDiff:.2f} seconds')
     # return dublin_df
+
+try:
+    dublincity(keywords)
+except:
+    variables[ 'Error' ] = 'Error in Dublin City Function'
+
+try:
+    fingal(keywords)
+except:
+    variables[ 'Error' ] = 'Error in Fingal Function'    
     
-dublincity(keywords)
-fingal(keywords)
+try:
+    dunlaoghaire(keywords)
+except:
+    variables[ 'Error' ] = 'Error in Dun Laoghaire Function'
+
 dunlaoghaire(keywords)
 
 #------------------------------------------Wexford--------------------------------------------
@@ -606,7 +631,10 @@ def wexford(keywords):
     print(f'Completed Wexford in {timeDiff:.2f} seconds')
     # return wexford_df
 
-wexford(keywords)
+try:
+    wexford(keywords)
+except:
+    variables[ 'Error' ] = 'Error in Wexford Function'    
 
 #----------------------South Dublin------------------------
 
@@ -697,7 +725,10 @@ def southDublin(keywords):
     print(f'Completed South Dublin in {timeDiff:.2f} seconds')
     # return southDublin_df
 
-southDublin(keywords)
+try:
+    southDublin(keywords)
+except:
+    variables[ 'Error' ] = 'Error in South Dublin Function'    
 
 #--------------An Bord Pleanala - SID-----------------------
 
@@ -706,7 +737,6 @@ cards = ['1','2','3','4']
 iterations = []
 for item in cards:
     iterations.append(item)
-
 
 def ABP(cards, iterations):
     startTime = time.time()
@@ -869,7 +899,10 @@ def ABP(cards, iterations):
     print(f'Completed An Bord Pleanala in {timeDiff:.2f} seconds')
     #return sid_df
 
-ABP(cards,iterations) 
+try:
+    ABP(cards,iterations)
+except:
+    variables[ 'Error' ] = 'Error in ABP Function'
 
 #--------------Department Consultations--------------------
 
@@ -972,7 +1005,10 @@ def deptCons():
     print(f'Completed Dept Consultations in {timeDiff:.2f} seconds')
     # return deptCons_df
 
-deptCons()
+try:
+    deptCons()
+except:
+    variables[ 'Error' ] = 'Error in Dept Consultations Function'
 
 #----------------------Threads-----------------------------
 #t1 = Thread(target=bulk,args=(keywords,standardLinks,))
