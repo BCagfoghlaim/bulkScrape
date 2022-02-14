@@ -20,8 +20,9 @@ from threading import Thread
 import os
 import webbrowser
 import sys
-
 from selenium import webdriver
+import warnings
+warnings.filterwarnings("ignore")
 
 beginTime = time.time()
 
@@ -1090,6 +1091,8 @@ new_df['Tweet Sent?'] = new_df['Tweet Sent?'].fillna('-')
 
 new_df['Deadline']=pd.to_datetime(new_df['Deadline'])
 new_df['Received Date']=pd.to_datetime(new_df['Received Date'])
+
+pd.options.mode.chained_assignment = None  # default='warn'
 new_df['test'] = (pd.to_datetime('today').normalize() - pd.to_datetime(new_df['Deadline'])).dt.days
 
 new_df.loc[(new_df['test'] > 50), 'Draft Tweet'] = 'No Tweet'
