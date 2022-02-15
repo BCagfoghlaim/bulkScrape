@@ -38,7 +38,7 @@ options.add_argument('--no-sandbox')
 options.add_argument('--disable-dev-shm-usage')
 options.add_argument('user-agent=Mozilla/5.0 (Macintosh; Intel Mac OS X 10.10; rv:39.0) Gecko/20100101 Firefox/39.0')
 
-keywords =['data storage', 'gas', 'gas plant', 'data hall', 'data cent', 'datacent', 'data-cent', 'energy cent', 'kv substation']
+keywords =['data storage', 'gas', 'data hall', 'data cent', 'datacent', 'data-cent', 'energy cent', 'kv substation']
 
 driver = webdriver.Chrome(options = options)
 driver.set_page_load_timeout(30)
