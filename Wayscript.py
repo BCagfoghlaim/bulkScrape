@@ -915,14 +915,13 @@ def deptCons():
 
     deptCons_df = pd.DataFrame(columns=['Received Date''Development Description'])
 
-    #seventhdriver = webdriver.Chrome(ChromeDriverManager().install())
-    seventhdriver = webdriver.Chrome(options = options)
+    seventhdriver = webdriver.Chrome(ChromeDriverManager().install())
 
     link = 'https://www.gov.ie/en/search/?type=consultations&organisation=department-of-the-environment-climate-and-communications'
 
     seventhdriver.get(link)
-
-    pages = seventhdriver.find_element_by_xpath('/html/body/div[3]/div[2]/div[2]/div[2]/div/div/div[2]')
+    
+    pages = seventhdriver.find_element_by_xpath('/html/body/div[4]/div[2]/div[2]/div[2]/div/div/div[2]')
     pagetext = pages.text
     pagenum = pagetext.split("/ ")
     totalPageNum = int(pagenum[1])
@@ -949,18 +948,20 @@ def deptCons():
         for link in consList.find_all('a'):
             url = link['href']
             links.append(url)
-
+       
+        deets = [str(deet) for deet in deets]
+        deets = [deet.replace('Department of Agriculture, Food and the Marine;','') for deet in deets]
+        
         links = ['https://www.gov.ie' + url for url in links]
 
         listToStr = ';'.join([str(elem) for elem in deets])
         details = listToStr.split(";")
-
+        
         splitList = [details[i:i + 5] for i in range(0, len(details), 5)]
-
         dates = []
         for list in splitList:
             dates.append(list[1])
-
+        
         try:
             seventhdriver.find_element_by_xpath('/html/body/div[3]/div[2]/div[2]/div[2]/div/div/div[3]/a/span[2]').click()
         except:
@@ -1005,7 +1006,7 @@ def deptCons():
     timeDiff = endTime - startTime
     print(f'Completed Dept Consultations in {timeDiff:.2f} seconds')
     # return deptCons_df
-
+    
 try:
     deptCons()
 except:
