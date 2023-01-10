@@ -8,8 +8,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import datetime
-from tkinter import *  
-from tkinter import messagebox
+# from tkinter import *  
+# from tkinter import messagebox
 from selenium.common.exceptions import TimeoutException
 import gspread
 from df2gspread import df2gspread as d2g
